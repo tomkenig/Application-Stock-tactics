@@ -1,5 +1,7 @@
 # todo: update and lock records
 # todo: zero-devide error in data frame
+# todo: combination table. Can be stored in other schema
+# todo: pep8
 """
 pip install mysql-connector-python
 pip install pandas
@@ -69,9 +71,6 @@ def get_ohlc_data():
     df_bak = df.copy()  # absolutly needed. Simple assignment doesn't work
     print("OHLC data ready")
     return df, df_bak
-
-
-
 
 
 def get_structured_data():
@@ -370,36 +369,117 @@ def print_results():
 def export_results_to_xls():
     df.to_excel("exports/export_settings" + str(download_settings_id) + "_" + str(time.time()) + ".xlsx")
 
+# DO TESTS
+def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_value_1_in, buy_indicator_1_operator_in, test_yield_expect_in, test_wait_periods_in):
+    test_stake = int(test_stake_in)
+    test_indicator_buy_1 = test_indicator_buy_1_in
+    #test_indicator_buy_2 = "token_trend_50"
+    #test_indicator_buy_3 = "token_trend_100"
+    #test_indicator_buy_4 = "adx_7"
+    test_indicator_value_1 = test_indicator_value_1_in
+    #test_indicator_value_2 = 1
+    #test_indicator_value_3 = 1
+    #test_indicator_value_4 = 40
+    test_yield_expect = test_yield_expect_in  # ie. 0.01=1%
+    test_wait_periods = test_wait_periods_in  # ie. try to sell in next 6 periods (or 10)
+    test_stoploss = -0.05  # must be minus
+    test_stock_fee = -0.002  # must be minus
+
+    #signal and operator from exec
+    exec('df["tst_is_buy_signal"] = np.where((df[test_indicator_buy_1] '+ buy_indicator_1_operator_in +' test_indicator_value_1), 1, 0)')
+                                       #                                   & (df[test_indicator_buy_2] < test_indicator_value_2)
+                                       #                                   & (df[test_indicator_buy_3] < test_indicator_value_3)
+                                       #                                   & (df[test_indicator_buy_4] > test_indicator_value_4)
+                                       #, 1, 0)
+
+
+    df["tst_sell_price"] = df["close"] * test_yield_expect + df["close"]
+    df["tst_sell_stoploss_price"] = df["close"] + df["close"] * test_stoploss # must be plus
+    df["tst_high_in_sell_period"] = df["high"].rolling(test_wait_periods).max().shift(-test_wait_periods)
+    df["tst_low_in_sell_period"] = df["low"].rolling(test_wait_periods).min().shift(-test_wait_periods)
+    df["tst_sell_after_yield"] = np.where(df['tst_high_in_sell_period'] >= df["tst_sell_price"], 1, 0)
+    df["tst_sell_after_stoploss"] = np.where(df['tst_low_in_sell_period'] <= df["tst_sell_stoploss_price"], 1, 0)
+    df["tst_sold_price"] = np.where(df['tst_sell_after_yield'] == 1, df["tst_sell_price"], df["close"].shift(-1 * test_wait_periods)) # market after time
+    df["tst_sold_diff_perc"] = df["tst_sold_price"] / df["close"]
+    df["tst_single_game_result"] = np.where(df['tst_sold_diff_perc'] > 1, 1, -1)
+    df["tst_buy_sell_fee"] = test_stake * test_stock_fee # todo: change later, but accuracy is good
+    df["tst_single_game_earn"] = test_stake * df["tst_sold_diff_perc"] - test_stake
+    df["tst_single_game_earn_minus_fees"] = (test_stake * df["tst_sold_diff_perc"] - test_stake) + df["tst_buy_sell_fee"]
+    # todo: single game result with stoploss. Need improvement
+    df["tst_single_game_earn_minus_fees_with_stoploss"] = np.where(df['tst_sell_after_stoploss'] == 1 , test_stake * test_stoploss + df["tst_buy_sell_fee"], df["tst_single_game_earn_minus_fees"])
+
+
+    # test_name = "tst_" & market & "_" & tick_interval & "_" & test_indicator_buy_1
+
+    # print(df.info(verbose=True))
+
+    # last check
+    #print(df)
+
+    # df2 aggr
+    df2 = df[df["tst_is_buy_signal"] == 1].groupby(["open_time_yr", "open_time_mnt"]).\
+        aggregate({"tst_is_buy_signal": "sum",
+                   #"tst_single_game_earn": "sum",
+                   "tst_single_game_earn_minus_fees": "sum"
+                   #"tst_single_game_earn_minus_fees_with_stoploss": "sum"
+                   })
+    df2['earn_sign'] = np.sign(df2["tst_single_game_earn_minus_fees"])
+    # print(df2)
+
+
+    df3 = df[df["tst_is_buy_signal"] == 1].groupby(["open_time_yr"]).\
+        aggregate({"tst_is_buy_signal": "sum",
+                   #"tst_single_game_earn": "sum",
+                   "tst_single_game_earn_minus_fees": "sum"
+                   #"tst_single_game_earn_minus_fees_with_stoploss": "sum"
+                   })
+    df3['earn_sign'] = np.sign(df3["tst_single_game_earn_minus_fees"])
+    # print(df3)
+
+    # statistics
+
+    df4 = df[df["tst_is_buy_signal"] == 1].aggregate({"tst_is_buy_signal": "sum",
+                   #"tst_single_game_earn": "sum",
+                   "tst_single_game_earn_minus_fees": "sum"
+                   #"tst_single_game_earn_minus_fees_with_stoploss": "sum"
+                   })
+    # print(df4)
+
+    # jsons with results
+    result_string_1 = pd.DataFrame.to_json(df2)
+    result_string_2 = pd.DataFrame.to_json(df3)
+    result_string_3 = pd.DataFrame.to_json(df4)
+    score_1 = df4["tst_is_buy_signal"]  # sum of buy signals:  -1 or 1
+    score_2 = df4["tst_single_game_earn_minus_fees"]  # single game earn minus fees sum
+    score_3 = df2["earn_sign"].sum() / df2["earn_sign"].count() if df2["earn_sign"].count() > 0 else 0  # monthly game earn percent
+    score_4 = df3["earn_sign"].sum() / df3["earn_sign"].count() if df3["earn_sign"].count() > 0 else 0  # yearly game earn percent
+
+    return result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4
+
 
 
 
 if __name__ == "__main__":
+
+    # get configuration
     db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name\
         , db_tactics_analyse_table_name, db_tactics_results_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE = get_settings_json()
+
+    # temp dir
     create_temp_dir()
     # delete_old_files()
     cursor, cnxn = db_connect()
-    #
 
+    # Delete it on prod
     open_time = str(1531042226) + '000'
+
+    # downloads tactics to check
     tactics_data = get_tactics_to_check()
+
+    # get only data for one settings_id. Don't blend settings _id in one iteration
     download_settings_id = tactics_data[0][1]
     # print(tactics_data)
-
     print("select done settings done")
-
-
-    # todo: not need to use all params. just use download_settings_id
-    # todo: combination table. Can be stored in other schema
-
-    # TEST VALUES
-    # download_settings_id = 11  # 3
-    # market = 'BTCUSDT'
-    # tick_interval = '1d'
-    # data_granulation = 'klines'
-    # stock_type = 'spot'
-    # stock_exchange = 'Binance.com'
-    # open_time = str(1631042226) + '000'
 
 
     df, df_bak = get_ohlc_data()
@@ -435,11 +515,11 @@ if __name__ == "__main__":
     #get_indicators_momentum_plus_di([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
     #get_indicators_momentum_plus_dm([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
     #get_indicators_momentum_ppo()
-    #get_indicators_momentum_roc([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])  # tradingview checked:ok
+    get_indicators_momentum_roc([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])  # tradingview checked:ok
     #get_indicators_momentum_rocp([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
     #get_indicators_momentum_rocr([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
     #get_indicators_momentum_rocr100([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    get_indicators_momentum_rsi([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
+    #get_indicators_momentum_rsi([6, 7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
     #get_indicators_momentum_stoch()
     #get_indicators_momentum_stochf()
     #get_indicators_momentum_stochrsi([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
@@ -452,6 +532,9 @@ if __name__ == "__main__":
     #get_indicators_volume_chaikin_ad_oscillator()
     #get_indicators_volume_obv()
 
+
+
+
     print(df)
 
     # todo: if some results are different between tradingview and this program - check other library fe: TA instead of PTA
@@ -459,3 +542,52 @@ if __name__ == "__main__":
     # export_results_to_xls()
 
     print_results()
+
+    # test 1:
+    print(tactics_data)
+    print(tactics_data[1][0])
+
+
+    # TEST RUN
+
+    print("begin test")
+    print(len(tactics_data))
+
+    df_bak = df.copy()
+
+    for i in range(len(tactics_data)):  # in tactics_data:
+        print(i)
+        # i = 1
+
+        # print(int(tactics_data[i][2]), tactics_data[i][3], tactics_data[i][4], tactics_data[i][5], tactics_data[i][6], tactics_data[i][7])
+
+        result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4 = get_test_result(
+            int(tactics_data[i][2]), tactics_data[i][3], tactics_data[i][4], tactics_data[i][5], tactics_data[i][6],
+            tactics_data[i][7])
+
+        # print(result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4)
+
+        cursor.execute(
+            "UPDATE " + db_tactics_schema_name + ".tactics_tests SET tactic_status_id = 2 where tactic_id = " + str(
+                tactics_data[i][0]) + " ")
+        print("update status done")
+        cnxn.commit()
+
+        # insert results if results are good enough
+        # insert results if results are good enough
+        # todo: read upper scripts and rewrite script listed below from 0
+        print("score2:")
+        print(score_2)
+
+        if score_2 >= 100:
+            cursor.execute(
+                "INSERT INTO " + db_tactics_schema_name + ".tactics_tests_results (download_settings_id, tactic_id, result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4)  values "
+                                                  "(%s, %s, %s, %s, %s, %s, %s, %s, %s)", (
+                    download_settings_id, str(tactics_data[i][0]), result_string_1, result_string_2, result_string_3,
+                    str(int(score_1)), str(int(score_2)), str(score_3), str(score_4)))
+
+        print("insert done or not")
+        df = df_bak.copy()  # absolutly needed. Simple assignment doesn't work in pandas
+        print(df)
+        cnxn.commit()
+

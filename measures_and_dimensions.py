@@ -1,7 +1,17 @@
-# todo: update and lock records
+# DONE: todo: update and lock records
 # todo: zero-devide error in data frame
 # todo: combination table. Can be stored in other schema
 # todo: pep8
+# todo: test_stock_fee = -0.002, do dynamic not static
+# todo: if some results are different between tradingview and this program - check other library fe: TA instead of PTA
+# todo: tactic_status table with data
+# todo: add tactic
+# todo: functions interpretation
+# todo: anl functions check
+# todo: FURURE performance: Ad Worker id in confin file
+# todo: do smth with updates fe. one update DB
+# todo: separate tactics and OHLC (can be even on other dbs)
+# todo: do smth with long sting in tactics (anl. functions string)
 """
 pip install mysql-connector-python
 pip install pandas
@@ -21,13 +31,13 @@ import os
 import uuid  # https://docs.python.org/3/library/uuid.html
 import openpyxl
 
-
 # todo: make better. All from json
 # get settings from config json
 def get_settings_json():
     with open("global_config.json") as json_conf:
         app_conf = (json.load(json_conf))
     print("conf file opened")
+    db_klines_schema_name = app_conf["db_klines_schema_name"]
     db_tactics_schema_name = app_conf["db_tactics_schema_name"]
     db_klines_anl_table_name = app_conf["db_klines_anl_table_name"]
     db_binance_settings_table_name = app_conf["db_binance_settings_table_name"]
@@ -36,7 +46,8 @@ def get_settings_json():
     db_tactics_results_table_name = app_conf["db_tactics_results_table_name"]
     TMP_DIR_PATH = app_conf["tmp_dir_path"]
     TACTICS_PACK_SIZE = app_conf["tactics_pack_size"]
-    return db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name, db_tactics_analyse_table_name, db_tactics_results_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE
+    return db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name, \
+           db_tactics_analyse_table_name, db_tactics_results_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE
 
 # create temporary directory for downloaded files
 def create_temp_dir():
@@ -55,17 +66,30 @@ def delete_old_files():
         print(error)
 
 
-
+# todo: lock record status in get_tactics_to_check()
 def get_tactics_to_check():
     cursor.execute("SELECT tactic_id, download_settings_id, test_stake, buy_indicator_1_name, buy_indicator_1_value, "
-                   "buy_indicator_1_operator,  yield_expected, wait_periods "
-                   "FROM " + db_tactics_schema_name + "." + db_tactics_analyse_table_name + "  where tactic_status_id = 0 and download_settings_id = (SELECT download_settings_id FROM " + db_tactics_schema_name + "." + db_tactics_analyse_table_name + "  where tactic_status_id = 0 limit 1 )  limit " + str(TACTICS_PACK_SIZE) +" ")
+                   "buy_indicator_1_operator, buy_indicator_1_functions, yield_expected, wait_periods "
+                   "FROM " + db_tactics_schema_name + "." + db_tactics_analyse_table_name + " "
+                   " where tactic_status_id = 0 and download_settings_id = (SELECT download_settings_id FROM "
+                   "" + db_tactics_schema_name + "." + db_tactics_analyse_table_name + " "
+                   " where tactic_status_id = 0 limit 1 )  limit " + str(TACTICS_PACK_SIZE) +";")
     tactics_data = cursor.fetchall()
+    update_tactics_data = tactics_data.copy()
+
+    # lock records status
+    for i in update_tactics_data:
+        print(i[0])
+        cursor.execute(
+            "UPDATE " + db_tactics_schema_name + ".tactics_tests SET tactic_status_id = 1 where tactic_id = " + str(
+                i[0]) + " ")
+    print("update status done")
+    cnxn.commit()
     return tactics_data
 
 # download OHLC data from DWH
 def get_ohlc_data():
-    cursor.execute("SELECT * FROM " + db_tactics_schema_name + "." + db_klines_anl_table_name + " where "
+    cursor.execute("SELECT * FROM " + db_klines_schema_name + "." + db_klines_anl_table_name + " where "
                                      "download_settings_id = '" + str(download_settings_id) + "' ")
     df = pd.DataFrame(cursor.fetchall())
     df_bak = df.copy()  # absolutly needed. Simple assignment doesn't work
@@ -142,14 +166,22 @@ def get_indicators_averages_cross():
 
     # Moving average crossing moving average
     # golden cross (1) and death cross (-1)
-    df["cross_sma_50_200"] = np.where((df["sma_50"] - df["sma_200"] < 0) & (df["sma_50"].shift(1) - df["sma_200"].shift(1) > 0), -1, 0) +\
-                             np.where((df["sma_50"] - df["sma_200"] > 0) & (df["sma_50"].shift(1) - df["sma_200"].shift(1) < 0), 1, 0)
-    df["cross_sma_7_14"] = np.where((df["sma_7"] - df["sma_14"] < 0) & (df["sma_7"].shift(1) - df["sma_14"].shift(1) > 0), -1, 0) +\
-                             np.where((df["sma_7"] - df["sma_14"] > 0) & (df["sma_7"].shift(1) - df["sma_14"].shift(1) < 0), 1, 0)
-    df["cross_sma_7_21"] = np.where((df["sma_7"] - df["sma_21"] < 0) & (df["sma_7"].shift(1) - df["sma_21"].shift(1) > 0), -1, 0) +\
-                             np.where((df["sma_7"] - df["sma_21"] > 0) & (df["sma_7"].shift(1) - df["sma_21"].shift(1) < 0), 1, 0)
-    df["cross_sma_7_50"] = np.where((df["sma_7"] - df["sma_50"] < 0) & (df["sma_7"].shift(1) - df["sma_50"].shift(1) > 0), -1, 0) +\
-                             np.where((df["sma_7"] - df["sma_50"] > 0) & (df["sma_7"].shift(1) - df["sma_50"].shift(1) < 0), 1, 0)
+    df["cross_sma_50_200"] = np.where((df["sma_50"] - df["sma_200"] < 0) & (df["sma_50"].shift(1)
+                                                                            - df["sma_200"].shift(1) > 0), -1, 0) +\
+                             np.where((df["sma_50"] - df["sma_200"] > 0) & (df["sma_50"].shift(1)
+                                                                            - df["sma_200"].shift(1) < 0), 1, 0)
+    df["cross_sma_7_14"] = np.where((df["sma_7"] - df["sma_14"] < 0) & (df["sma_7"].shift(1)
+                                                                        - df["sma_14"].shift(1) > 0), -1, 0) +\
+                             np.where((df["sma_7"] - df["sma_14"] > 0) & (df["sma_7"].shift(1)
+                                                                          - df["sma_14"].shift(1) < 0), 1, 0)
+    df["cross_sma_7_21"] = np.where((df["sma_7"] - df["sma_21"] < 0) & (df["sma_7"].shift(1)
+                                                                        - df["sma_21"].shift(1) > 0), -1, 0) +\
+                             np.where((df["sma_7"] - df["sma_21"] > 0) & (df["sma_7"].shift(1)
+                                                                          - df["sma_21"].shift(1) < 0), 1, 0)
+    df["cross_sma_7_50"] = np.where((df["sma_7"] - df["sma_50"] < 0) & (df["sma_7"].shift(1)
+                                                                        - df["sma_50"].shift(1) > 0), -1, 0) +\
+                             np.where((df["sma_7"] - df["sma_50"] > 0) & (df["sma_7"].shift(1)
+                                                                          - df["sma_50"].shift(1) < 0), 1, 0)
 
     # moving average crossing price 7, 14, 21, 50
     df["cross_sma_price_7"] = np.where((df["sma_7"] - df["close"] < 0) & (df["sma_7"].shift(1) - df["close"].shift(1) > 0), 1, 0) +\
@@ -250,43 +282,35 @@ def get_indicators_momentum_mfi(period_list):
     for i in period_list:
         df["mfi_"+str(i)] = ta.MFI(df["high"], df["low"], df["close"], df["volume"], timeperiod=i)
 
-
-
 def get_indicators_momentum_minus_di(period_list):
     # MINUS_DI - Minus Directional Indicator
     for i in period_list:
         df["minus_di_"+str(i)] = ta.MINUS_DI(df["high"], df["low"], df["close"], timeperiod=i)
-
 
 def get_indicators_momentum_minus_dm(period_list):
     # MINUS_DM - Minus Directional Movement
     for i in period_list:
         df["minus_dm_"+str(i)] = ta.MINUS_DM(df["high"], df["low"], timeperiod=i)
 
-
 def get_indicators_momentum_mom(period_list):
     # MOM - Momentum
     for i in period_list:
         df["mom_"+str(i)] = ta.MOM(df["close"], timeperiod=i)
-
 
 def get_indicators_momentum_plus_di(period_list):
     # MINUS_DI - Minus Directional Indicator (negative)
     for i in period_list:
         df["plus_di_"+str(i)] = ta.PLUS_DI(df["high"], df["low"], df["close"], timeperiod=i)
 
-
 def get_indicators_momentum_plus_dm(period_list):
     # MINUS_DM - Minus Directional Movement (positive)
     for i in period_list:
         df["plus_dm_"+str(i)] = ta.PLUS_DM(df["high"], df["low"], timeperiod=i)
 
-
 def get_indicators_momentum_ppo():
     # PPO - Percentage Price Oscillator
     df["ppo_12_26"] = ta.PPO(df["close"], fastperiod=12, slowperiod=26, matype=0)  # standart
     df["ppo_10_21"] = ta.PPO(df["close"], fastperiod=10, slowperiod=21, matype=0)  # tradingview corr
-
 
 def get_indicators_momentum_roc(period_list):
     # ROC - Rate of change : ((price/prevPrice)-1)*100
@@ -313,7 +337,6 @@ def get_indicators_momentum_rsi(period_list):
     for i in period_list:
         df["rsi_"+str(i)] = ta.RSI(df["close"], timeperiod=i)
 
-
 def get_indicators_momentum_stoch():
     # STOCH - Stochastic
     df["slowk"], df["slowd"] = ta.STOCH(df["high"], df["low"], df["close"], fastk_period=5, slowk_period=3, slowk_matype=0, slowd_period=3, slowd_matype=0)
@@ -327,7 +350,6 @@ def get_indicators_momentum_stochrsi(period_list):
     for i in period_list:
         df["stochrsi_fast_k_"+str(i)], df["stochrsi_fast_d_"+str(i)] = ta.STOCHRSI(df["close"], timeperiod=i, fastk_period=5, fastd_period=3, fastd_matype=0)
 
-
 def get_indicators_momentum_trix(period_list):
     # TRIX - 1-day Rate-Of-Change (ROC) of a Triple Smooth EMA
     # 30 standard time period
@@ -337,9 +359,6 @@ def get_indicators_momentum_trix(period_list):
 def get_indicators_momentum_ultosc():
     # ULTOSC - Ultimate Oscillator
     df["ultosc_7_14_28"] = ta.ULTOSC(df["high"], df["low"], df["close"], timeperiod1=7, timeperiod2=14, timeperiod3=28)
-
-
-
 
 def get_indicators_momentum_willr(period_list):
     for i in period_list:
@@ -373,13 +392,7 @@ def export_results_to_xls():
 def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_value_1_in, buy_indicator_1_operator_in, test_yield_expect_in, test_wait_periods_in):
     test_stake = int(test_stake_in)
     test_indicator_buy_1 = test_indicator_buy_1_in
-    #test_indicator_buy_2 = "token_trend_50"
-    #test_indicator_buy_3 = "token_trend_100"
-    #test_indicator_buy_4 = "adx_7"
     test_indicator_value_1 = test_indicator_value_1_in
-    #test_indicator_value_2 = 1
-    #test_indicator_value_3 = 1
-    #test_indicator_value_4 = 40
     test_yield_expect = test_yield_expect_in  # ie. 0.01=1%
     test_wait_periods = test_wait_periods_in  # ie. try to sell in next 6 periods (or 10)
     test_stoploss = -0.05  # must be minus
@@ -457,17 +470,15 @@ def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_value
     return result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4
 
 
-
-
 if __name__ == "__main__":
-
     # get configuration
-    db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name\
+    db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name\
         , db_tactics_analyse_table_name, db_tactics_results_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE = get_settings_json()
 
-    # temp dir
+    # create or clear temp dir
     create_temp_dir()
-    # delete_old_files()
+
+    # connect to db
     cursor, cnxn = db_connect()
 
     # Delete it on prod
@@ -478,78 +489,31 @@ if __name__ == "__main__":
 
     # get only data for one settings_id. Don't blend settings _id in one iteration
     download_settings_id = tactics_data[0][1]
+
     # print(tactics_data)
     print("select done settings done")
 
-
+    # get OHLC data and create data frames
     df, df_bak = get_ohlc_data()
-    print(df)
+    # print(df)
 
-    tactics_data = get_tactics_to_check()
-
+    # create structure on tactics data
     get_structured_data()
-    print(df)
-
+    # print(df)
 
     # INDICATORS
-
     get_indicators_basics()
-    #get_indicators_trend_and_changes()
-    #get_indicators_averages([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_averages_cross()
-    #get_indicators_averages_cross_perioids()
 
-    #get_indicators_momentum_adx([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_adxr([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_apo()
-    #get_indicators_momentum_aroon([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_bop()
-    #get_indicators_momentum_cci([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_cmo([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_dx([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_macd()
-    #get_indicators_momentum_mfi([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])  # tradingview checked:ok
-    #get_indicators_momentum_minus_di([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_minus_dm([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_mom([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_plus_di([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_plus_dm([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_ppo()
-    get_indicators_momentum_roc([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])  # tradingview checked:ok
-    #get_indicators_momentum_rocp([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_rocr([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_rocr100([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_rsi([6, 7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_stoch()
-    #get_indicators_momentum_stochf()
-    #get_indicators_momentum_stochrsi([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_trix([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-    #get_indicators_momentum_ultosc()
-    #get_indicators_momentum_willr([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
+    # activate analytic functions from tactics set
+    eval(tactics_data[0][6])
 
-    # Volume indicators
-    #get_indicators_volume_chaikin_ad()
-    #get_indicators_volume_chaikin_ad_oscillator()
-    #get_indicators_volume_obv()
-
-
-
-
-    print(df)
-
-    # todo: if some results are different between tradingview and this program - check other library fe: TA instead of PTA
-
+    # export results to xlsx. Work fine, when all analytical functions needed are activated.
     # export_results_to_xls()
 
-    print_results()
+    # print current df
+    # print_results()
 
-    # test 1:
-    print(tactics_data)
-    print(tactics_data[1][0])
-
-
-    # TEST RUN
-
+    # REAL TEST RUN
     print("begin test")
     print(len(tactics_data))
 
@@ -557,15 +521,9 @@ if __name__ == "__main__":
 
     for i in range(len(tactics_data)):  # in tactics_data:
         print(i)
-        # i = 1
-
-        # print(int(tactics_data[i][2]), tactics_data[i][3], tactics_data[i][4], tactics_data[i][5], tactics_data[i][6], tactics_data[i][7])
-
         result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4 = get_test_result(
-            int(tactics_data[i][2]), tactics_data[i][3], tactics_data[i][4], tactics_data[i][5], tactics_data[i][6],
-            tactics_data[i][7])
-
-        # print(result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4)
+            int(tactics_data[i][2]), tactics_data[i][3], tactics_data[i][4], tactics_data[i][5], tactics_data[i][7],
+            tactics_data[i][8])
 
         cursor.execute(
             "UPDATE " + db_tactics_schema_name + ".tactics_tests SET tactic_status_id = 2 where tactic_id = " + str(
@@ -573,7 +531,6 @@ if __name__ == "__main__":
         print("update status done")
         cnxn.commit()
 
-        # insert results if results are good enough
         # insert results if results are good enough
         # todo: read upper scripts and rewrite script listed below from 0
         print("score2:")
@@ -590,4 +547,3 @@ if __name__ == "__main__":
         df = df_bak.copy()  # absolutly needed. Simple assignment doesn't work in pandas
         print(df)
         cnxn.commit()
-

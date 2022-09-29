@@ -21,3 +21,4 @@ measures_and_dimensions_dev_test.py
 tmp_stock_tactisc.sql
 *.pyc
 test.py
+indicators_verification.py

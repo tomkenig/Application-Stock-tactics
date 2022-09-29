@@ -4,7 +4,7 @@
 # todo: pep8
 # todo: test_stock_fee = -0.002, do dynamic not static
 # todo: if some results are different between tradingview and this program - check other library fe: TA instead of PTA
-# todo: tactic_status table with data
+# DONE: todo: tactic_status table with data
 # todo: add tactic
 # todo: functions interpretation
 # todo: anl functions check
@@ -12,6 +12,12 @@
 # todo: do smth with updates fe. one update DB
 # todo: separate tactics and OHLC (can be even on other dbs)
 # todo: do smth with long sting in tactics (anl. functions string)
+# todo: add to results string 4 additional values with times, with open and close times. It will be helpfull in
+#  multitactic analysis . Which are the best and doesn't cross other tactics
+# todo: create process to delete old tactics (you will have its predata.
+# todo: create process to delete old results
+# todo: insert tactic generator pre data in db
+# todo: decide witch results are valuable. Fe: every year winn, almost all months win, minimum profit etc.
 """
 pip install mysql-connector-python
 pip install pandas
@@ -50,9 +56,9 @@ def get_settings_json():
            db_tactics_analyse_table_name, db_tactics_results_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE
 
 # create temporary directory for downloaded files
-def create_temp_dir():
+def create_temp_dir(tmp_dir_path_in):
     try:
-        os.mkdir(TMP_DIR_PATH)
+        os.mkdir(tmp_dir_path_in)
     except OSError as error:
         print(error)
 
@@ -81,7 +87,7 @@ def get_tactics_to_check():
     for i in update_tactics_data:
         print(i[0])
         cursor.execute(
-            "UPDATE " + db_tactics_schema_name + ".tactics_tests SET tactic_status_id = 1 where tactic_id = " + str(
+            "UPDATE " + db_tactics_schema_name + "." + db_tactics_table_name +" SET tactic_status_id = 1 where tactic_id = " + str(
                 i[0]) + " ")
     print("update status done")
     cnxn.commit()
@@ -122,6 +128,7 @@ def get_structured_data():
 
 
 def get_indicators_basics():
+    # verified
     # basics
     df["open_time_dt"] = pd.to_datetime(df["open_datetime"], unit='ms')
     df["open_time_yr"] = df["open_time_dt"].dt.year
@@ -132,13 +139,16 @@ def get_indicators_basics():
     df["change_perc"] = df.close / df.open - 1
     df["amplitude_val"] = df.high - df.low
     df["amplitude_perc"] = df.high - df.low / df.open
-    df["up_down"] = np.where(df["close"] - df["close"].shift(1) > 0, 1, -1)
+    df["up_down"] = np.where(df["close"] - df["close"].shift(1) > 0, 1, -1)  # 1up / -1 down
 
 
 def get_indicators_trend_and_changes():
+    # NOT verified: it's trend change indicator/breakpoint indicator?
     # token: trend up/down 1 / -1
     # definition: in custom period sums of change are up or down.
     # you an combine it with ADX - trend strength by multiply both ie. -1 * 40
+    # 1 - up-trend in x periods -1 - down-trend in x periods
+    # values -1 (negative), 1 (positive)
     df["token_change_7"] = df["change_val"].rolling(7).sum()
     df["token_trend_7"] = np.where(df["token_change_7"] > 0, 1, -1)
     df["token_change_10"] = df["change_val"].rolling(10).sum()
@@ -156,6 +166,8 @@ def get_indicators_trend_and_changes():
 
 # AVERAGES
 def get_indicators_averages(period_list):
+    # verified tradingView
+    # interpretation: not needed
     # SMA (Simple), WMA, EMA (Exponential)
     for i in period_list:
         df["sma_"+str(i)] = pta.sma(df["close"], length=i)
@@ -163,7 +175,9 @@ def get_indicators_averages(period_list):
         df["ema_"+str(i)] = pta.ema(df["close"], length=i)
 
 def get_indicators_averages_cross():
-
+    # verified TradingView
+    # GAME PROPOSAL: -1 - continue downtrend ; +1 - continue uptrend
+    # fe: Buy when +1
     # Moving average crossing moving average
     # golden cross (1) and death cross (-1)
     df["cross_sma_50_200"] = np.where((df["sma_50"] - df["sma_200"] < 0) & (df["sma_50"].shift(1)
@@ -217,6 +231,7 @@ def get_indicators_averages_cross_perioids():
 def get_indicators_momentum_adx(period_list):
     # ADX Average directional movement index
     # checked with tradingview
+    # use only combined with other indicators
     for i in period_list:
         df["adx_"+str(i)] = ta.ADX(df["high"], df["low"], df["close"], timeperiod=i)
 
@@ -229,8 +244,12 @@ def get_indicators_momentum_adxr(period_list):
 
 
 def get_indicators_momentum_apo():
+    # verification:
+    # crossing above 0 - bullish ; crossing below 0 - berish
     df["apo_12_26"] = pta.apo(df["close"], fastperiod=12, slowperiod=26, matype=0)  # standart
     df["apo_10_20"] = pta.apo(df["close"], fastperiod=10, slowperiod=20, matype=0)  # standart
+
+def get_indicators_momentum_apo_cross():
 
 
 def get_indicators_momentum_aroon(period_list):
@@ -476,7 +495,7 @@ if __name__ == "__main__":
         , db_tactics_analyse_table_name, db_tactics_results_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE = get_settings_json()
 
     # create or clear temp dir
-    create_temp_dir()
+    create_temp_dir(TMP_DIR_PATH)
 
     # connect to db
     cursor, cnxn = db_connect()
@@ -526,7 +545,7 @@ if __name__ == "__main__":
             tactics_data[i][8])
 
         cursor.execute(
-            "UPDATE " + db_tactics_schema_name + ".tactics_tests SET tactic_status_id = 2 where tactic_id = " + str(
+            "UPDATE " + db_tactics_schema_name + "." + db_tactics_table_name +" SET tactic_status_id = 2 where tactic_id = " + str(
                 tactics_data[i][0]) + " ")
         print("update status done")
         cnxn.commit()
@@ -538,7 +557,7 @@ if __name__ == "__main__":
 
         if score_2 >= 100:
             cursor.execute(
-                "INSERT INTO " + db_tactics_schema_name + ".tactics_tests_results (download_settings_id, tactic_id, result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4)  values "
+                "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_results_table_name +" (download_settings_id, tactic_id, result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4)  values "
                                                   "(%s, %s, %s, %s, %s, %s, %s, %s, %s)", (
                     download_settings_id, str(tactics_data[i][0]), result_string_1, result_string_2, result_string_3,
                     str(int(score_1)), str(int(score_2)), str(score_3), str(score_4)))

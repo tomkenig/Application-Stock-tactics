@@ -244,12 +244,31 @@ def get_indicators_momentum_adxr(period_list):
 
 
 def get_indicators_momentum_apo():
-    # verification:
+    # verification: apo_10_20 ok, other based on ta-lib not, but check them
+    # name: Absolute price oscillator
+    # interpretation: bearish market or bullish market
     # crossing above 0 - bullish ; crossing below 0 - berish
-    df["apo_12_26"] = pta.apo(df["close"], fastperiod=12, slowperiod=26, matype=0)  # standart
-    df["apo_10_20"] = pta.apo(df["close"], fastperiod=10, slowperiod=20, matype=0)  # standart
+    # APO = Shorter Period EMA – Longer Period EMA
+    # problems: talib and pt-lib calculations are not pass with pattern and
+    # require: EMA's
+    df["apo_10_20"] = df["ema_10"] - df["ema_20"]  # standard
+    df["apo_talib_10_20"] = ta.APO(df["close"], fastperiod=10, slowperiod=20, matype=0)  # standart tradingview
+    df["apo_talib_12_26"] = ta.APO(df["close"], fastperiod=12, slowperiod=26, matype=0)
+
+
 
 def get_indicators_momentum_apo_cross():
+    # verification: apo_cross_10_20 ok, other based on ta-lib not, but check them
+    # token
+    # 1 - crossing to bullish ; 0 - crossing to bearish
+    df["apo_cross_10_20"] = np.where((df["apo_10_20"] > 0) & (df["apo_10_20"].shift(1) < 0), 1,
+                                     np.where((df["apo_10_20"] < 0) & (df["apo_10_20"].shift(1) > 0), -1, 0))
+    df["apo_cross_talib_10_20"] = np.where((df["apo_talib_10_20"] > 0) & (df["apo_talib_10_20"].shift(1) < 0), 1,
+                                     np.where((df["apo_talib_10_20"] < 0) & (df["apo_talib_10_20"].shift(1) > 0),
+                                              -1, 0))
+    df["apo_cross_talib_12_26"] = np.where((df["apo_talib_12_26"] > 0) & (df["apo_talib_12_26"].shift(1) < 0), 1,
+                                     np.where((df["apo_talib_12_26"] < 0) & (df["apo_talib_12_26"].shift(1) > 0),
+                                              -1, 0))
 
 
 def get_indicators_momentum_aroon(period_list):

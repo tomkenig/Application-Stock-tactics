@@ -249,7 +249,7 @@ def get_indicators_momentum_apo():
     # interpretation: bearish market or bullish market
     # crossing above 0 - bullish ; crossing below 0 - berish
     # APO = Shorter Period EMA – Longer Period EMA
-    # problems: talib and pt-lib calculations are not pass with pattern and
+    # problems: talib and pt-lib calculations are not pass with pattern
     # require: EMA's
     df["apo_10_20"] = df["ema_10"] - df["ema_20"]  # standard
     df["apo_talib_10_20"] = ta.APO(df["close"], fastperiod=10, slowperiod=20, matype=0)  # standart tradingview
@@ -274,16 +274,24 @@ def get_indicators_momentum_apo_cross():
 def get_indicators_momentum_aroon(period_list):
     # https://tradersarea.pl/aroon-indicator-wskaznik-analizy-technicznej/
     #AROON
+    # verification:
+    # tradingView: ok
+
     for i in period_list:
         df["aroondown_"+str(i)], df["aroonup_"+str(i)] = ta.AROON(df["high"], df["low"], timeperiod=i)
 
         #AROONOSC
         df["aroonosc_"+str(i)] = ta.AROONOSC(df["high"], df["low"], timeperiod=i)
 
-def get_indicators_momentum_bop():
+def get_indicators_momentum_bop(period_list):
     # BOP - Balance Of Power
     # checked with tradingview
     df["bop"] = pta.bop(df["open"], df["high"], df["low"], df["close"])
+
+    # BOP - Balance Of Power smoothed
+    # autor: token
+    for i in period_list:
+        df["bop_sma_" + str(i)] = pta.sma(df["bop"], length=i)
 
 def get_indicators_momentum_cci(period_list):
     # CCI -- tradingView.. Oversold: -80 - -300/-500 - infinity scale
@@ -309,11 +317,8 @@ def get_indicators_momentum_macd():
     df["upcross_downcross_macd_signal"] = np.where((df["macd"] - df["macdsignal"] > 0) & (df["macd"].shift(1) - df["macdsignal"].shift(1) < 0), 1, 0) +\
                              np.where((df["macd"] - df["macdsignal"] < 0) & (df["macd"].shift(1) - df["macdsignal"].shift(1) > 0), -1, 0)
 
-
 # todo: MACDEXT - MACD with controllable MA type
-
 # todo: MACDFIX - Moving Average Convergence/Divergence Fix 12/26
-
 
 def get_indicators_momentum_mfi(period_list):
     # MFI - Money Flow Index
@@ -404,7 +409,6 @@ def get_indicators_momentum_willr(period_list):
 
 
 # todo: indicators outside TA-LIB (fe. CHOP, other from trafing course FXMAG (aligators etc.)
-
 
 # VOLUME INDICATORS
 

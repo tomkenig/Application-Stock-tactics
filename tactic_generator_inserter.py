@@ -17,8 +17,9 @@ if __name__ == "__main__":
     tactic_group_name = 'RSI first tests'
     tactic_group_category = 'single indicator test'  # multiple ind. test
     tactic_group_data = {
-        "tactic_group_id": [3],
+        # "tactic_group_id": [3],  # todo: hmm, is this easy to make?
         "tactic_group_name": "RSI first tests",
+        "tactic_group_category": "single indicators",
         "tactic_group_stock_tactics_version": "0.01",
         "download_settings_id": [3],
         "test_stake": [100],
@@ -38,3 +39,6 @@ if __name__ == "__main__":
         "values (%s, %s, %s, %s)", (tactic_group_name, tactic_group_category, 0, str(tactic_group_data)))
     cnxn.commit()
     print("new rows inserted")
+
+    print(cursor.lastrowid)
+

@@ -458,7 +458,7 @@ def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_value
     df["tst_sold_price"] = np.where(df['tst_sell_after_yield'] == 1, df["tst_sell_price"], df["close"].shift(-1 * test_wait_periods)) # market after time
     df["tst_sold_diff_perc"] = df["tst_sold_price"] / df["close"]
     df["tst_single_game_result"] = np.where(df['tst_sold_diff_perc'] > 1, 1, -1)
-    df["tst_buy_sell_fee"] = test_stake * test_stock_fee # todo: change later, but accuracy is good
+    df["tst_buy_sell_fee"] = test_stake * test_stock_fee  # todo: change later, but accuracy is good
     df["tst_single_game_earn"] = test_stake * df["tst_sold_diff_perc"] - test_stake
     df["tst_single_game_earn_minus_fees"] = (test_stake * df["tst_sold_diff_perc"] - test_stake) + df["tst_buy_sell_fee"]
     # todo: single game result with stoploss. Need improvement
@@ -525,7 +525,7 @@ if __name__ == "__main__":
     cursor, cnxn = db_connect()
 
     # Delete it on prod
-    open_time = str(1531042226) + '000'
+    open_time = str(1631042226) + '000'
 
     # downloads tactics to check
     tactics_data = get_tactics_to_check()
@@ -548,7 +548,14 @@ if __name__ == "__main__":
     get_indicators_basics()
 
     # activate analytic functions from tactics set
-    eval(tactics_data[0][6])
+    # get_indicators_momentum_roc([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
+
+    zaq = tactics_data[0][6]
+    print(type(zaq))
+    print(zaq)
+    print("test")
+    eval(zaq)
+    # print(tactics_data[0][6])
 
     # export results to xlsx. Work fine, when all analytical functions needed are activated.
     # export_results_to_xls()

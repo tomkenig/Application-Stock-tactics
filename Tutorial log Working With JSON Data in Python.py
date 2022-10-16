@@ -1,4 +1,1 @@
-# JSON
-# may contains strings, numbers, nested objects
-# Native library: json
-#
+print(type(["roc_7", "roc_9", "roc_12", "roc_14"]))

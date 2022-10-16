@@ -9,18 +9,16 @@ import json
 if __name__ == "__main__":
     # get configuration
     db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, \
-    db_tactics_table_name, db_tactics_groups_table_name \
-        , db_tactics_analyse_table_name, db_tactics_results_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE = \
+    db_tactics_table_name, db_tactics_groups_table_name, \
+    db_tactics_analyse_table_name, db_tactics_results_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE = \
         md.get_settings_json()
     cursor, cnxn = db_connect()
 
-    tactic_group_name = 'RSI first tests'
-    tactic_group_category = 'single indicator test'  # multiple ind. test
+    tactic_group_category = "single indicator test"  # multiple ind. test
     tactic_group_data = {
-        # "tactic_group_id": [3],  # todo: hmm, is this easy to make?
         "tactic_group_name": "RSI first tests",
         "tactic_group_category": "single indicators",
-        "tactic_group_stock_tactics_version": "0.01",
+        "tactic_group_stock_tactics_version": "v0.01",
         "download_settings_id": [3],
         "test_stake": [100],
         "buy_indicator_1_name": ["roc_7", "roc_9", "roc_12", "roc_14"],
@@ -36,9 +34,11 @@ if __name__ == "__main__":
     cursor.execute(
         "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_groups_table_name +
         " (tactic_group_name, tactic_group_category, tactic_group_status_id, tactic_group_data)  "
-        "values (%s, %s, %s, %s)", (tactic_group_name, tactic_group_category, 0, str(tactic_group_data)))
+        "values (%s, %s, %s, %s)", (tactic_group_data["tactic_group_name"],
+                                    tactic_group_category,
+                                    0,
+                                    json.dumps(tactic_group_data)))
     cnxn.commit()
     print("new rows inserted")
 
     print(cursor.lastrowid)
-

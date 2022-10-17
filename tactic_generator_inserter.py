@@ -20,7 +20,8 @@ if __name__ == "__main__":
         "buy_indicator_1_name": ["roc_7", "roc_9", "roc_12", "roc_14"],
         "buy_indicator_1_value": [-3, -4, -5, -6, -7, -8, -9, -10],
         "buy_indicator_1_operator": ["<"],
-        "buy_indicator_1_functions": "get_indicators_momentum_roc([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200]), get_indicators_momentum_mom([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])",
+        "buy_indicator_1_functions": "get_indicators_momentum_roc([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200]), "
+                                     "get_indicators_momentum_mom([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])",
         "yield_expected": [0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05, 0.1],
         "wait_periods": [8, 9, 10, 11, 12, 13, 14, 15]
     }
@@ -29,11 +30,12 @@ if __name__ == "__main__":
 
     cursor.execute(
         "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_groups_table_name +
-        " (tactic_group_name, tactic_group_category, tactic_group_status_id, tactic_group_data, buy_indicator_1_functions)  "
+        " (tactic_group_name, tactic_group_category, "
+        "tactic_group_status_id, tactic_group_data, buy_indicator_1_functions)  "
         "values (%s, %s, %s, %s, %s)", (tactic_group_data["tactic_group_name"],
-                                    tactic_group_data["tactic_group_category"],
-                                    0,
-                                    json.dumps(tactic_group_data),
-                                    str(tactic_group_data["buy_indicator_1_functions"])))  # function easy to use
+                                        tactic_group_data["tactic_group_category"],
+                                        0,
+                                        json.dumps(tactic_group_data),
+                                        str(tactic_group_data["buy_indicator_1_functions"])))  # function easy to use
     cnxn.commit()
     print("new row inserted, record id:" + str(cursor.lastrowid))

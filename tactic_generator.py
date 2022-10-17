@@ -1,15 +1,17 @@
+# todo v0.02: IDEA: TACTCS DATA CAN BE GENERATED IN MEM FROM SQL VIEW OR SCRIPT. tHERE IS NO NEED TO INSERT TACTICS INTO
+# todo v0.02: you car remove var creation later. It can be in the next step, while creating crosslists
+# todo: DONE: correct buy_indicator_1_functions - take them from tactic_groups table
+# todo: DONE insert also tactic group id
+# todo: DONE: don't insert functions name from tactic group
+# todo: DONE: get_tactics_group_json() update status after select!
+# todo: error handling ex: list out of range where there aren't any groups to handle
+# todo: in m&d get function from tactics
+# todo: yield expects as variable
+# todo: md5 hash on json with variables
+# todo: need to be equal as m&d names
 # todo: there are no need to be more than one representation of buy_indictator_functions in set and db
 # todo: save number of tactic group ID in tactics table also
 # todo: correct tactic group id
-# todo: correct buy_indicator_1_functions - take them from tactic_groups table
-# todo: yield expectes as variable
-# todo: md5 hash on json with variables
-# todo: need to be equal as m&d names
-# todo: IDEA: TACTCS DATA CAN BE GENERATED IN MEMORY FROM SQL VIEW OR SCRIPT. tHERE IS NO NEED TO INSERT TACTICS INTO DB
-# todo: error handling ex: list out of range where there aren't any groups to handle
-# todo: in m&d get function from tactics
-# todo: you car remove var creation later. It can be in the next step, while creating crosslists
-# todo: DONE insert also tactic group id
 # libs
 from db_works import db_connect
 import itertools
@@ -17,13 +19,11 @@ import measures_and_dimensions as md
 import json
 import hashlib as hl
 
-# todo: get tactic group, make vars and change status to 1 after in progress. After all change staus to 2
 def get_tactics_group_json():
     cursor.execute("SELECT tactic_group_id, tactic_group_data "
                    "FROM " + db_tactics_schema_name + "." + db_tactics_groups_table_name + " "
                    " where tactic_group_status_id = 0 order by tactic_group_id limit 1; ")
     tactics_group_data = cursor.fetchall()
-    # todo: update status after select!
     cursor.execute("UPDATE " + db_tactics_schema_name + "." + db_tactics_groups_table_name + " "
                    " SET tactic_group_status_id = 1 WHERE tactic_group_id = " + str(tactics_group_data[0][0]) + "; ")
     cnxn.commit()
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     tactics_group_data_json, tactics_group_id = get_tactics_group_json()
 
 
-    # todo: dont insert functions name from tactic group
+
     # tactics insert
     x = []
     crosslists = [tactics_group_data_json["download_settings_id"],
@@ -61,21 +61,30 @@ if __name__ == "__main__":
     print("Elements to insert: " + str(len(x)))
 
     for y in x:
-        cursor.execute("INSERT INTO " + db_tactics_schema_name + "." + db_tactics_table_name + " ( download_settings_id, test_stake, buy_indicator_1_name, buy_indicator_1_value, buy_indicator_1_operator, "
-                                              "yield_expected, wait_periods, stock_fee, tactic_status_id, tactic_group_id)  values "
-                                              "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",  (y[0],
-                                                                                            y[1],
-                                                                                            y[2],
-                                                                                            y[3],
-                                                                                            y[4],
-                                                                                            y[5],
-                                                                                            y[6],
-                                                                                            0.002,
-                                                                                            0,
-                                                                                            tactics_group_id))
+        cursor.execute("INSERT INTO " + db_tactics_schema_name +
+                       "." + db_tactics_table_name + " ( download_settings_id, "
+                                                     "test_stake, "
+                                                     "buy_indicator_1_name, "
+                                                     "buy_indicator_1_value, "
+                                                     "buy_indicator_1_operator, "
+                                                     "yield_expected, "
+                                                     "wait_periods, "
+                                                     "stock_fee, "
+                                                     "tactic_status_id, "
+                                                     "tactic_group_id)  values "
+                                                     "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                                                     (y[0],
+                                                      y[1],
+                                                      y[2],
+                                                      y[3],
+                                                      y[4],
+                                                      y[5],
+                                                      y[6],
+                                                      0.002,
+                                                      0,
+                                                      tactics_group_id))
         print(y)
 
-    # todo: update status after select!
     cursor.execute("UPDATE " + db_tactics_schema_name + "." + db_tactics_groups_table_name + " "
                    " SET tactic_group_status_id = 2 WHERE tactic_group_id = " + str(tactics_group_id) + "; ")
 

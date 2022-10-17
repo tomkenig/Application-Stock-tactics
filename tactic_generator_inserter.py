@@ -1,5 +1,4 @@
-# todo: all data should be insert as json in column tactic_group_data
-# todo: create view to quick view structured data
+# todo v0.02: create view to quick view structured data
 from db_works import db_connect
 import measures_and_dimensions as md
 import json
@@ -21,7 +20,7 @@ if __name__ == "__main__":
         "buy_indicator_1_name": ["roc_7", "roc_9", "roc_12", "roc_14"],
         "buy_indicator_1_value": [-3, -4, -5, -6, -7, -8, -9, -10],
         "buy_indicator_1_operator": ["<"],
-        "buy_indicator_1_functions": "get_indicators_momentum_roc([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])",
+        "buy_indicator_1_functions": "get_indicators_momentum_roc([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200]), get_indicators_momentum_mom([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])",
         "yield_expected": [0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05, 0.1],
         "wait_periods": [8, 9, 10, 11, 12, 13, 14, 15]
     }

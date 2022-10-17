@@ -548,14 +548,8 @@ if __name__ == "__main__":
     get_indicators_basics()
 
     # activate analytic functions from tactics set
-    # get_indicators_momentum_roc([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])
-
-    zaq = tactics_data[0][6]
-    print(type(zaq))
-    print(zaq)
-    print("test")
-    eval(zaq)
-    # print(tactics_data[0][6])
+    eval(tactics_data[0][6])
+    print(tactics_data[0][6])
 
     # export results to xlsx. Work fine, when all analytical functions needed are activated.
     # export_results_to_xls()

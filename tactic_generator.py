@@ -18,6 +18,7 @@ from db_works import db_connect
 import itertools
 import measures_and_dimensions as md
 import json
+import errhandler as eh
 import hashlib as hl
 
 def get_tactics_group_json():
@@ -29,11 +30,9 @@ def get_tactics_group_json():
         cursor.execute("UPDATE " + db_tactics_schema_name + "." + db_tactics_groups_table_name + " "
                        " SET tactic_group_status_id = 1 WHERE tactic_group_id = " + str(tactics_group_data[0][0]) + "; "
                        )
+    except Exception as e:
+        eh.errhandler_log(e)
 
-    except:
-        print("err: get_tactics_group_json()")
-        cnxn.rollback()
-        exit()
     cnxn.commit()
     tactics_group_data_json = json.loads(tactics_group_data[0][1])
     tactics_group_id = tactics_group_data[0][0]

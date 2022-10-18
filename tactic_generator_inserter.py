@@ -1,4 +1,6 @@
 # todo v0.02: create view to quick view structured data
+# todo v0.02: create def's
+# todo: error handling with logs
 from db_works import db_connect
 import measures_and_dimensions as md
 import json

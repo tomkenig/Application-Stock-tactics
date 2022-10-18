@@ -1,23 +1,25 @@
 # DONE: todo: update and lock records
-# todo: zero-devide error in data frame
-# todo: combination table. Can be stored in other schema
-# todo: pep8
-# todo: test_stock_fee = -0.002, do dynamic not static
-# todo: if some results are different between tradingview and this program - check other library fe: TA instead of PTA
 # DONE: todo: tactic_status table with data
-# todo: add tactic
+# DONE: todo: insert tactic generator pre data in db
+# DONE: todo: do smth with long sting in tactics (anl. functions string). f. string in tactic generator
+# todo: v0.02: combination table. Can be stored in other schema
+# todo: v0.02: pep8
+# todo: v0.02: do smth with updates fe.: one update DB/INE INSERT. Less connections to DB
+# todo: v0.02: separate tactics and OHLC (can be even on other dbs)
+# todo: create process to delete old results and tactics
+# todo: zero-devide error in data frame
+# todo: FUTURE performance: Ad Worker id in confin file
+# todo: test_stock_fee = -0.002, do dynamic not static
 # todo: functions interpretation
 # todo: anl functions check
-# todo: FURURE performance: Ad Worker id in confin file
-# todo: do smth with updates fe. one update DB
-# todo: separate tactics and OHLC (can be even on other dbs)
-# todo: do smth with long sting in tactics (anl. functions string)
-# todo: add to results string 4 additional values with times, with open and close times. It will be helpfull in
-#  multitactic analysis . Which are the best and doesn't cross other tactics
-# todo: create process to delete old tactics (you will have its predata.
-# todo: create process to delete old results
-# todo: insert tactic generator pre data in db
 # todo: decide witch results are valuable. Fe: every year winn, almost all months win, minimum profit etc.
+# todo: add to results string 4 additional values with times, with open and close times. It will be helpfull in
+#  multitactic analysis. Which are the best and doesn't cross other tactics
+# todo: create process to delete old tactics (you will have its predata.
+# todo: tactic cross - good tactics in the same time
+# todo: tactic time: when you play in stock with tactics - bad idea is parralel signals from different tactics
+# todo: error handling
+
 """
 pip install mysql-connector-python
 pip install pandas

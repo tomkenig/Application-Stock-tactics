@@ -1,9 +1,10 @@
 # todo v0.02: create view to quick view structured data
 # todo v0.02: create def's
-# todo: error handling with logs
+# DONE: todo: error handling with logs
 from db_works import db_connect
 import measures_and_dimensions as md
 import json
+import errhandler as eh
 
 if __name__ == "__main__":
     # get configuration
@@ -29,15 +30,17 @@ if __name__ == "__main__":
     }
 
     print(json.dumps(tactic_group_data))
-
-    cursor.execute(
-        "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_groups_table_name +
-        " (tactic_group_name, tactic_group_category, "
-        "tactic_group_status_id, tactic_group_data, buy_indicator_1_functions)  "
-        "values (%s, %s, %s, %s, %s)", (tactic_group_data["tactic_group_name"],
-                                        tactic_group_data["tactic_group_category"],
-                                        0,
-                                        json.dumps(tactic_group_data),
-                                        str(tactic_group_data["buy_indicator_1_functions"])))  # function easy to use
-    cnxn.commit()
-    print("new row inserted, record id:" + str(cursor.lastrowid))
+    try:
+        cursor.execute(
+            "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_groups_table_name +
+            " (tactic_group_name, tactic_group_category, "
+            "tactic_group_status_id, tactic_group_data, buy_indicator_1_functions)  "
+            "values (%s, %s, %s, %s, %s)", (tactic_group_data["tactic_group_name"],
+                                            tactic_group_data["tactic_group_category"],
+                                            0,
+                                            json.dumps(tactic_group_data),
+                                            str(tactic_group_data["buy_indicator_1_functions"])))  # function easy to use
+        cnxn.commit()
+        print("new row inserted, record id:" + str(cursor.lastrowid))
+    except Exception as e:
+        eh.errhandler_log(e)

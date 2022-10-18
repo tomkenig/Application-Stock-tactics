@@ -13,6 +13,7 @@
 # todo: there are no need to be more than one representation of buy_indictator_functions in set and db
 # todo: correct tactic group id
 # todo: add enumerator on insert and print it
+# todo: error handling
 # libs
 from db_works import db_connect
 import itertools

@@ -26,7 +26,8 @@ if __name__ == "__main__":
         "buy_indicator_1_functions": "get_indicators_momentum_roc([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200]), "
                                      "get_indicators_momentum_mom([7, 9, 12, 14, 20, 21, 24, 25, 30, 50, 100, 200])",
         "yield_expected": [0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05, 0.1],
-        "wait_periods": [8, 9, 10, 11, 12, 13, 14, 15]
+        "wait_periods": [8, 9, 10, 11, 12, 13, 14, 15],
+        "standard_fee": [0.001]
     }
 
     print(json.dumps(tactic_group_data))

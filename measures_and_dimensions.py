@@ -19,6 +19,7 @@
 # todo: tactic cross - good tactics in the same time
 # todo: tactic time: when you play in stock with tactics - bad idea is parralel signals from different tactics
 # todo: error handling
+# todo: to many print
 
 """
 pip install mysql-connector-python

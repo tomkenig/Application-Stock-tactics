@@ -1,4 +1,4 @@
-# todo: v0.02: IDEA: TACTCS DATA CAN BE GENERATED IN MEM FROM SQL VIEW OR SCRIPT. tHERE IS NO NEED TO INSERT TACTICS INTO
+# todo: v0.02: IDEA: TACTCS CAN BE GENERATED IN MEM FROM SQL VIEW OR SCRIPT. tHERE IS NO NEED TO INSERT TACTICS INTO
 # todo: v0.02: you car remove var creation later. It can be in the next step, while creating crosslists
 # todo: v0.02: md5 hash on json with variables
 # DONE: todo: save number of tactic group ID in tactics table also
@@ -6,14 +6,14 @@
 # DONE: todo: insert also tactic group id
 # DONE: todo: don't insert functions name from tactic group
 # DONE: todo: get_tactics_group_json() update status after select!
-# todo: error handling ex: list out of range where there aren't any groups to handle
-# todo: in m&d get function from tactics
-# todo: yield expects as variable
-# todo: need to be equal as m&d names
-# todo: there are no need to be more than one representation of buy_indictator_functions in set and db
-# todo: correct tactic group id
-# todo: add enumerator on insert and print it
-# todo: error handling
+# DONE: todo: correct tactic group id
+# DONE: todo: there are no need to be more than one representation of buy_indictator_functions in set and db
+# DONE: todo: in m&d get function from tactics
+# DONE: todo: add enumerator on insert and print it
+# DONE: todo: yield expects as variable
+# DONE: todo: need to be equal as m&d names
+# DONE: todo: error handling
+
 # libs
 from db_works import db_connect
 import itertools
@@ -60,12 +60,14 @@ if __name__ == "__main__":
                   tactics_group_data_json["buy_indicator_1_value"],
                   tactics_group_data_json["buy_indicator_1_operator"],
                   tactics_group_data_json["yield_expected"],
-                  tactics_group_data_json["wait_periods"]]
+                  tactics_group_data_json["wait_periods"],
+                  tactics_group_data_json["standard_fee"]]
 
     for element in itertools.product(*crosslists):
         x.append(element)
 
-    print("Elements to insert: " + str(len(x)))
+    xlen = str(len(x))
+    print("Elements to insert: " + xlen)
 
     for y in x:
         cursor.execute("INSERT INTO " + db_tactics_schema_name +
@@ -87,13 +89,17 @@ if __name__ == "__main__":
                                                       y[4],
                                                       y[5],
                                                       y[6],
-                                                      0.002,
+                                                      (y[7] + (y[7] * (1+y[5]))),
                                                       0,
                                                       tactics_group_id))
-        print(y)
+        print(x.index(y), " / ", xlen, y)
+
     # todo: add error log
-    cursor.execute("UPDATE " + db_tactics_schema_name + "." + db_tactics_groups_table_name + " "
-                   " SET tactic_group_status_id = 2 WHERE tactic_group_id = " + str(tactics_group_id) + "; ")
+    try:
+        cursor.execute("UPDATE " + db_tactics_schema_name + "." + db_tactics_groups_table_name + " "
+                       " SET tactic_group_status_id = 2 WHERE tactic_group_id = " + str(tactics_group_id) + "; ")
+        cnxn.commit()
+    except Exception as e:
+        eh.errhandler_log(e)
 
     print("insert done")
-    cnxn.commit()

@@ -6,10 +6,10 @@
 # DONE: todo: tactic_status table with data
 # DONE: todo: insert tactic generator pre data in db
 # DONE: todo: do smth with long sting in tactics (anl. functions string). f. string in tactic generator
+# DONE: todo: Ad Worker id \
+# DONE: todo: test_stock_fee = -0.002, do dynamic not static
 # todo: create process to delete old results and tactics
 # todo: fix zero-devide error in data frame
-# todo: FUTURE performance: Ad Worker id in config file and data
-# todo: test_stock_fee = -0.002, do dynamic not static
 # todo: functions interpretation
 # todo: anl functions check
 # todo: decide witch results are valuable. Fe: every year winn, almost all months win, minimum profit etc.

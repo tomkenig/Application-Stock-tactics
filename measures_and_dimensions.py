@@ -1,25 +1,22 @@
-# DONE: todo: update and lock records
-# DONE: todo: tactic_status table with data
-# DONE: todo: insert tactic generator pre data in db
-# DONE: todo: do smth with long sting in tactics (anl. functions string). f. string in tactic generator
 # todo: v0.02: combination table. Can be stored in other schema
 # todo: v0.02: pep8
 # todo: v0.02: do smth with updates fe.: one update DB/INE INSERT. Less connections to DB
 # todo: v0.02: separate tactics and OHLC (can be even on other dbs)
+# DONE: todo: update and lock records
+# DONE: todo: tactic_status table with data
+# DONE: todo: insert tactic generator pre data in db
+# DONE: todo: do smth with long sting in tactics (anl. functions string). f. string in tactic generator
 # todo: create process to delete old results and tactics
-# todo: zero-devide error in data frame
-# todo: FUTURE performance: Ad Worker id in confin file
+# todo: fix zero-devide error in data frame
+# todo: FUTURE performance: Ad Worker id in config file and data
 # todo: test_stock_fee = -0.002, do dynamic not static
 # todo: functions interpretation
 # todo: anl functions check
 # todo: decide witch results are valuable. Fe: every year winn, almost all months win, minimum profit etc.
 # todo: add to results string 4 additional values with times, with open and close times. It will be helpfull in
 #  multitactic analysis. Which are the best and doesn't cross other tactics
-# todo: create process to delete old tactics (you will have its predata.
-# todo: tactic cross - good tactics in the same time
-# todo: tactic time: when you play in stock with tactics - bad idea is parralel signals from different tactics
 # todo: error handling
-# todo: to many print
+# todo: fix to many print
 
 """
 pip install mysql-connector-python
@@ -55,10 +52,11 @@ def get_settings_json():
     db_tactics_groups_table_name = app_conf["db_tactics_groups_table_name"]
     db_tactics_analyse_table_name = app_conf["db_tactics_analyse_table_name"]
     db_tactics_results_table_name = app_conf["db_tactics_results_table_name"]
+    db_tactics_workers_table_name = app_conf["db_tactics_workers_table_name"]
     TMP_DIR_PATH = app_conf["tmp_dir_path"]
     TACTICS_PACK_SIZE = app_conf["tactics_pack_size"]
     return db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name, db_tactics_groups_table_name, \
-           db_tactics_analyse_table_name, db_tactics_results_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE
+           db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE
 
 # create temporary directory for downloaded files
 def create_temp_dir(tmp_dir_path_in):
@@ -75,6 +73,26 @@ def delete_old_files():
         print("old files deleted")
     except OSError as error:
         print(error)
+
+
+def register_worker():
+    worker_name = str(os.getenv('COMPUTERNAME', 'defaultValue'))
+    print(worker_name)
+    try:
+        try:
+            cursor.execute("select worker_id FROM " + db_tactics_schema_name + "." + db_tactics_workers_table_name + " WHERE worker_name = '" + worker_name + "' ;")
+            worker_id = cursor.fetchall()[0][0]
+            cursor.execute("UPDATE " + db_tactics_schema_name + "." + db_tactics_workers_table_name + " SET last_run_timestamp = CURRENT_TIMESTAMP where worker_name = '" + worker_name + "' ;")
+            print(worker_id)
+            cnxn.commit()
+        except:
+            cursor.execute("INSERT into " + db_tactics_schema_name + "." + db_tactics_workers_table_name + " (worker_name) values ('"+worker_name+"') ; ")
+            worker_id = str(cursor.lastrowid)
+            print(worker_id)
+            cnxn.commit()
+    except Exception as e:
+        eh.errhandler_log(e)
+    return worker_name, worker_id
 
 
 # todo: lock record status in get_tactics_to_check()
@@ -520,13 +538,16 @@ def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_value
 if __name__ == "__main__":
     # get configuration
     db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name, db_tactics_groups_table_name \
-        , db_tactics_analyse_table_name, db_tactics_results_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE = get_settings_json()
+        , db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE = get_settings_json()
 
     # create or clear temp dir
     create_temp_dir(TMP_DIR_PATH)
 
     # connect to db
     cursor, cnxn = db_connect()
+
+    # register worker
+    worker_name, worker_id = register_worker()
 
     # Delete it on prod
     open_time = str(1631042226) + '000'
@@ -586,10 +607,10 @@ if __name__ == "__main__":
 
         if score_2 >= 100:
             cursor.execute(
-                "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_results_table_name +" (download_settings_id, tactic_id, result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4)  values "
-                                                  "(%s, %s, %s, %s, %s, %s, %s, %s, %s)", (
+                "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_results_table_name +" (download_settings_id, tactic_id, result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4, worker_id)  values "
+                                                  "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (
                     download_settings_id, str(tactics_data[i][0]), result_string_1, result_string_2, result_string_3,
-                    str(int(score_1)), str(int(score_2)), str(score_3), str(score_4)))
+                    str(int(score_1)), str(int(score_2)), str(score_3), str(score_4), worker_id))
 
         print("insert done or not")
         df = df_bak.copy()  # absolutly needed. Simple assignment doesn't work in pandas

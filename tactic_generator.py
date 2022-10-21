@@ -43,14 +43,11 @@ if __name__ == "__main__":
     # get configuration
     db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, \
     db_tactics_table_name, db_tactics_groups_table_name, db_tactics_analyse_table_name, db_tactics_results_table_name, \
-    TMP_DIR_PATH, TACTICS_PACK_SIZE = md.get_settings_json()
+    db_tactics_workers_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE = md.get_settings_json()
     # connect to DB
     cursor, cnxn = db_connect()
-
     # get data from tactic group
     tactics_group_data_json, tactics_group_id = get_tactics_group_json()
-
-
 
     # tactics insert
     x = []
@@ -94,12 +91,12 @@ if __name__ == "__main__":
                                                       tactics_group_id))
         print(x.index(y), " / ", xlen, y)
 
-    # todo: add error log
     try:
         cursor.execute("UPDATE " + db_tactics_schema_name + "." + db_tactics_groups_table_name + " "
                        " SET tactic_group_status_id = 2 WHERE tactic_group_id = " + str(tactics_group_id) + "; ")
         cnxn.commit()
+        print("insert done")
     except Exception as e:
         eh.errhandler_log(e)
 
-    print("insert done")
+

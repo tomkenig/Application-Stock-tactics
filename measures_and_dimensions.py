@@ -7,7 +7,7 @@
 # DONE: todo: insert tactic generator pre data in db
 # DONE: todo: do smth with long sting in tactics (anl. functions string). f. string in tactic generator
 # DONE: todo: Ad Worker id \
-# DONE: todo: test_stock_fee = -0.002, do dynamic not static
+# todo: test_stock_fee = -0.002, do dynamic not static!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NOW
 # todo: create process to delete old results and tactics
 # todo: fix zero-devide error in data frame
 # todo: functions interpretation
@@ -17,6 +17,8 @@
 #  multitactic analysis. Which are the best and doesn't cross other tactics
 # todo: error handling
 # todo: fix to many print
+# todo: "if score_2 >= 200:" -- add this int config json
+# todo: # Delete it on prod open_time = str(1631042226) + '000'
 
 """
 pip install mysql-connector-python
@@ -98,7 +100,7 @@ def register_worker():
 # todo: lock record status in get_tactics_to_check()
 def get_tactics_to_check():
     cursor.execute("SELECT tactic_id, download_settings_id, test_stake, buy_indicator_1_name, buy_indicator_1_value, "
-                   "buy_indicator_1_operator, buy_indicator_1_functions, yield_expected, wait_periods "
+                   "buy_indicator_1_operator, buy_indicator_1_functions, yield_expected, wait_periods, stock_fee "
                    "FROM " + db_tactics_schema_name + "." + db_tactics_analyse_table_name + " "
                    " where tactic_status_id = 0 and download_settings_id = (SELECT download_settings_id FROM "
                    "" + db_tactics_schema_name + "." + db_tactics_analyse_table_name + " "
@@ -110,7 +112,7 @@ def get_tactics_to_check():
     for i in update_tactics_data:
         print(i[0])
         cursor.execute(
-            "UPDATE " + db_tactics_schema_name + "." + db_tactics_table_name +" SET tactic_status_id = 1 where tactic_id = " + str(
+            "UPDATE " + db_tactics_schema_name + "." + db_tactics_table_name +" SET tactic_status_id = 1, worker_id = " + str(worker_id) + " where tactic_id = " + str(
                 i[0]) + " ")
     print("update status done")
     cnxn.commit()
@@ -454,20 +456,20 @@ def export_results_to_xls():
     df.to_excel("exports/export_settings" + str(download_settings_id) + "_" + str(time.time()) + ".xlsx")
 
 # DO TESTS
-def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_value_1_in, buy_indicator_1_operator_in, test_yield_expect_in, test_wait_periods_in):
+def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_buy_value_1_in, buy_indicator_1_operator_in, test_yield_expect_in, test_wait_periods_in, stock_fee_in):
     test_stake = int(test_stake_in)
     test_indicator_buy_1 = test_indicator_buy_1_in
-    test_indicator_value_1 = test_indicator_value_1_in
+    test_indicator_buy_value_1 = test_indicator_buy_value_1_in
     test_yield_expect = test_yield_expect_in  # ie. 0.01=1%
     test_wait_periods = test_wait_periods_in  # ie. try to sell in next 6 periods (or 10)
     test_stoploss = -0.05  # must be minus
-    test_stock_fee = -0.002  # must be minus
+    test_stock_fee = -(stock_fee_in)  # must be minus
 
     #signal and operator from exec
-    exec('df["tst_is_buy_signal"] = np.where((df[test_indicator_buy_1] '+ buy_indicator_1_operator_in +' test_indicator_value_1), 1, 0)')
-                                       #                                   & (df[test_indicator_buy_2] < test_indicator_value_2)
-                                       #                                   & (df[test_indicator_buy_3] < test_indicator_value_3)
-                                       #                                   & (df[test_indicator_buy_4] > test_indicator_value_4)
+    exec('df["tst_is_buy_signal"] = np.where((df[test_indicator_buy_1] '+ buy_indicator_1_operator_in +' test_indicator_buy_value_1), 1, 0)')
+                                       #                                   & (df[test_indicator_buy_2] < test_indicator_buy_value_2)
+                                       #                                   & (df[test_indicator_buy_3] < test_indicator_buy_value_3)
+                                       #                                   & (df[test_indicator_buy_4] > test_indicator_buy_value_4)
                                        #, 1, 0)
 
 
@@ -592,7 +594,7 @@ if __name__ == "__main__":
         print(i)
         result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4 = get_test_result(
             int(tactics_data[i][2]), tactics_data[i][3], tactics_data[i][4], tactics_data[i][5], tactics_data[i][7],
-            tactics_data[i][8])
+            tactics_data[i][8], tactics_data[i][9])
 
         cursor.execute(
             "UPDATE " + db_tactics_schema_name + "." + db_tactics_table_name +" SET tactic_status_id = 2 where tactic_id = " + str(
@@ -605,7 +607,7 @@ if __name__ == "__main__":
         print("score2:")
         print(score_2)
 
-        if score_2 >= 100:
+        if score_2 >= 200:
             cursor.execute(
                 "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_results_table_name +" (download_settings_id, tactic_id, result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4, worker_id)  values "
                                                   "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (

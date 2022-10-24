@@ -7,7 +7,8 @@
 # DONE: todo: insert tactic generator pre data in db
 # DONE: todo: do smth with long sting in tactics (anl. functions string). f. string in tactic generator
 # DONE: todo: Ad Worker id \
-# todo: test_stock_fee = -0.002, do dynamic not static!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NOW
+# DONE: todo: test_stock_fee = -0.002, do dynamic not static!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NOW
+# DONE: todo: error handling
 # todo: create process to delete old results and tactics
 # todo: fix zero-devide error in data frame
 # todo: functions interpretation
@@ -15,7 +16,6 @@
 # todo: decide witch results are valuable. Fe: every year winn, almost all months win, minimum profit etc.
 # todo: add to results string 4 additional values with times, with open and close times. It will be helpfull in
 #  multitactic analysis. Which are the best and doesn't cross other tactics
-# todo: error handling
 # todo: fix to many print
 # todo: "if score_2 >= 200:" -- add this int config json
 # todo: # Delete it on prod open_time = str(1631042226) + '000'
@@ -607,7 +607,7 @@ if __name__ == "__main__":
         print("score2:")
         print(score_2)
 
-        if score_2 >= 200:
+        if score_2 >= 200 and score_4 == 1 and score_3 >= 0.75:
             cursor.execute(
                 "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_results_table_name +" (download_settings_id, tactic_id, result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4, worker_id)  values "
                                                   "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (

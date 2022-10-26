@@ -98,5 +98,3 @@ if __name__ == "__main__":
         print("insert done")
     except Exception as e:
         eh.errhandler_log(e)
-
-

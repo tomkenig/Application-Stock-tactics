@@ -2,6 +2,9 @@
 # todo: v0.02: pep8
 # todo: v0.02: do smth with updates fe.: one update DB/INE INSERT. Less connections to DB
 # todo: v0.02: separate tactics and OHLC (can be even on other dbs)
+# todo: v0.02: fix to many print
+# todo: v0.02: code clean
+# todo: v0.02: fix zero-devide error in data frame (hard to reach)
 # DONE: todo: update and lock records
 # DONE: todo: tactic_status table with data
 # DONE: todo: insert tactic generator pre data in db
@@ -9,16 +12,19 @@
 # DONE: todo: Ad Worker id \
 # DONE: todo: test_stock_fee = -0.002, do dynamic not static!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NOW
 # DONE: todo: error handling
+# DONE: todo: # Delete it on prod open_time = str(1631042226) + '000'
 # todo: create process to delete old results and tactics
-# todo: fix zero-devide error in data frame
 # todo: functions interpretation
 # todo: anl functions check
 # todo: decide witch results are valuable. Fe: every year winn, almost all months win, minimum profit etc.
 # todo: add to results string 4 additional values with times, with open and close times. It will be helpfull in
 #  multitactic analysis. Which are the best and doesn't cross other tactics
-# todo: fix to many print
 # todo: "if score_2 >= 200:" -- add this int config json
-# todo: # Delete it on prod open_time = str(1631042226) + '000'
+# todo: indicators: documentation
+# todo: indicators: RSI divergention price vs RSI
+# todo: indicators: all williams indicators
+# todo: indicators: test tactic signal creation (ok/not)
+# todo: change 0.01dev to 0.01 and add tag into all files
 
 """
 pip install mysql-connector-python
@@ -552,7 +558,7 @@ if __name__ == "__main__":
     worker_name, worker_id = register_worker()
 
     # Delete it on prod
-    open_time = str(1631042226) + '000'
+    # open_time = str(1631042226) + '000'
 
     # downloads tactics to check
     tactics_data = get_tactics_to_check()

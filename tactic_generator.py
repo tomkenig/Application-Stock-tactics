@@ -14,6 +14,8 @@
 # DONE: todo: need to be equal as m&d names
 # DONE: todo: error handling
 
+# Stock tactics v0.01
+
 # libs
 from db_works import db_connect
 import itertools

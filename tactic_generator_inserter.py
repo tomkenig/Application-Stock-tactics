@@ -1,6 +1,9 @@
 # todo v0.02: create view to quick view structured data
 # todo v0.02: create def's
 # DONE: todo: error handling with logs
+
+# Stock tactics v0.01
+
 from db_works import db_connect
 import measures_and_dimensions as md
 import json

@@ -5,6 +5,13 @@
 # todo: v0.02: fix to many print
 # todo: v0.02: code clean
 # todo: v0.02: fix zero-devide error in data frame (hard to reach)
+# todo: v0.02: create process to delete old results and tactics
+# todo: v0.02: decide witch results are valuable. Fe: every year winn, almost all months win, minimum profit etc.
+# todo: v0.02: add to results string 4 additional values with times, with open and close times. It will be helpfull in
+#  multitactic analysis. Which are the best and doesn't cross other tactics
+# todo: v0.02: "if score_2 >= 200:" -- add this int config json
+# todo: v0.02: indicators: RSI divergention price vs RSI
+# todo: v0.02: indicators: all williams indicators
 # DONE: todo: update and lock records
 # DONE: todo: tactic_status table with data
 # DONE: todo: insert tactic generator pre data in db
@@ -13,17 +20,11 @@
 # DONE: todo: test_stock_fee = -0.002, do dynamic not static!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NOW
 # DONE: todo: error handling
 # DONE: todo: # Delete it on prod open_time = str(1631042226) + '000'
-# todo: create process to delete old results and tactics
+# DONE: todo: test parallel workers
 # todo: functions interpretation
 # todo: anl functions check
-# todo: decide witch results are valuable. Fe: every year winn, almost all months win, minimum profit etc.
-# todo: add to results string 4 additional values with times, with open and close times. It will be helpfull in
-#  multitactic analysis. Which are the best and doesn't cross other tactics
-# todo: "if score_2 >= 200:" -- add this int config json
-# todo: indicators: documentation
-# todo: indicators: RSI divergention price vs RSI
-# todo: indicators: all williams indicators
-# todo: indicators: test tactic signal creation (ok/not)
+# todo: documentation
+# todo: test tactic signal creation (ok/not)
 # todo: change 0.01dev to 0.01 and add tag into all files
 
 """
@@ -32,6 +33,8 @@ pip install pandas
 pip install numpy
 plan 2022/02/03
 """
+# Stock tactics v0.01
+
 # libs
 # import datetime
 from db_works import db_connect

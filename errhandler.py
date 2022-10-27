@@ -4,6 +4,9 @@
 # DONE: todo: convert to dict
 # DONE: todo: create log directory
 # todo: v0.02: use also logging library
+
+# Stock tactics v0.01
+
 import os
 import sys
 import datetime

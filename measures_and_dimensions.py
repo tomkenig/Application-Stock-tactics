@@ -21,11 +21,11 @@
 # DONE: todo: error handling
 # DONE: todo: # Delete it on prod open_time = str(1631042226) + '000'
 # DONE: todo: test parallel workers
-# todo: functions interpretation
-# todo: anl functions check
-# todo: documentation
-# todo: test tactic signal creation (ok/not)
-# todo: change 0.01dev to 0.01 and add tag into all files
+# todo: v0.02: functions interpretation
+# todo: v0.02: anl functions check
+# todo: v0.02: documentation
+# todo: v0.02: test tactic signal creation (ok/not)
+# DONE: todo: change 0.01dev to 0.01 and add tag into all files
 
 """
 pip install mysql-connector-python

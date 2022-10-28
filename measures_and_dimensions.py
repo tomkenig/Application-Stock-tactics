@@ -494,8 +494,12 @@ def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_buy_v
     df["tst_buy_sell_fee"] = test_stake * test_stock_fee  # todo: change later, but accuracy is good
     df["tst_single_game_earn"] = test_stake * df["tst_sold_diff_perc"] - test_stake
     df["tst_single_game_earn_minus_fees"] = (test_stake * df["tst_sold_diff_perc"] - test_stake) + df["tst_buy_sell_fee"]
+    df["tst_single_game_earn_minus_fees_plus"] = np.where(df["tst_single_game_earn_minus_fees"] > 0, df["tst_single_game_earn_minus_fees"], None)
+    df["tst_single_game_earn_minus_fees_minus"] = np.where(df["tst_single_game_earn_minus_fees"] < 0, df["tst_single_game_earn_minus_fees"], None)
+    df["tst_single_game_earn_minus_fees_plus_sign"] = np.where(df["tst_single_game_earn_minus_fees"] > 0, 1, None)
+    df["tst_single_game_earn_minus_fees_minus_sign"] = np.where(df["tst_single_game_earn_minus_fees"] < 0, -1, None)
     # todo: single game result with stoploss. Need improvement
-    df["tst_single_game_earn_minus_fees_with_stoploss"] = np.where(df['tst_sell_after_stoploss'] == 1 , test_stake * test_stoploss + df["tst_buy_sell_fee"], df["tst_single_game_earn_minus_fees"])
+    df["tst_single_game_earn_minus_fees_with_stoploss"] = np.where(df['tst_sell_after_stoploss'] == 1, test_stake * test_stoploss + df["tst_buy_sell_fee"], df["tst_single_game_earn_minus_fees"])
 
 
     # test_name = "tst_" & market & "_" & tick_interval & "_" & test_indicator_buy_1
@@ -509,7 +513,11 @@ def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_buy_v
     df2 = df[df["tst_is_buy_signal"] == 1].groupby(["open_time_yr", "open_time_mnt"]).\
         aggregate({"tst_is_buy_signal": "sum",
                    #"tst_single_game_earn": "sum",
-                   "tst_single_game_earn_minus_fees": "sum"
+                   "tst_single_game_earn_minus_fees": "sum",
+                   "tst_single_game_earn_minus_fees_plus": "sum",
+                   "tst_single_game_earn_minus_fees_minus": "sum",
+                   "tst_single_game_earn_minus_fees_plus_sign": "sum",
+                   "tst_single_game_earn_minus_fees_minus_sign": "sum"
                    #"tst_single_game_earn_minus_fees_with_stoploss": "sum"
                    })
     df2['earn_sign'] = np.sign(df2["tst_single_game_earn_minus_fees"])
@@ -519,7 +527,11 @@ def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_buy_v
     df3 = df[df["tst_is_buy_signal"] == 1].groupby(["open_time_yr"]).\
         aggregate({"tst_is_buy_signal": "sum",
                    #"tst_single_game_earn": "sum",
-                   "tst_single_game_earn_minus_fees": "sum"
+                   "tst_single_game_earn_minus_fees": "sum",
+                   "tst_single_game_earn_minus_fees_plus": "sum",
+                   "tst_single_game_earn_minus_fees_minus": "sum",
+                   "tst_single_game_earn_minus_fees_plus_sign": "sum",
+                   "tst_single_game_earn_minus_fees_minus_sign": "sum"
                    #"tst_single_game_earn_minus_fees_with_stoploss": "sum"
                    })
     df3['earn_sign'] = np.sign(df3["tst_single_game_earn_minus_fees"])
@@ -529,7 +541,11 @@ def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_buy_v
 
     df4 = df[df["tst_is_buy_signal"] == 1].aggregate({"tst_is_buy_signal": "sum",
                    #"tst_single_game_earn": "sum",
-                   "tst_single_game_earn_minus_fees": "sum"
+                   "tst_single_game_earn_minus_fees": "sum",
+                   "tst_single_game_earn_minus_fees_plus": "sum",
+                   "tst_single_game_earn_minus_fees_minus": "sum",
+                   "tst_single_game_earn_minus_fees_plus_sign": "sum",
+                   "tst_single_game_earn_minus_fees_minus_sign": "sum"
                    #"tst_single_game_earn_minus_fees_with_stoploss": "sum"
                    })
     # print(df4)

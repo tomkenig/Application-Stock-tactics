@@ -1,3 +1,5 @@
+# Stock tactics v0.02dev
+
 # todo: v0.02: IDEA: TACTCS CAN BE GENERATED IN MEM FROM SQL VIEW OR SCRIPT. tHERE IS NO NEED TO INSERT TACTICS INTO
 # todo: v0.02: you car remove var creation later. It can be in the next step, while creating crosslists
 # todo: v0.02: md5 hash on json with variables
@@ -14,7 +16,7 @@
 # DONE: todo: need to be equal as m&d names
 # DONE: todo: error handling
 # todo: v0.02: get_settings_json() need to be in other file than measureas_and_dimensions (ta-lib expected)
-# Stock tactics v0.02dev
+
 
 # libs
 from db_works import db_connect

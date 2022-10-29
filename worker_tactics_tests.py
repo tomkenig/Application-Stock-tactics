@@ -18,6 +18,6 @@ if __name__ == "__main__":
             i+=1
             print(i)
         except:
-            time.sleep(10)
+            time.sleep(100)
             print("waiting...")
             continue

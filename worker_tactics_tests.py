@@ -5,6 +5,7 @@
 # todo: v0.02: test 4 workers in the same time
 # todo: v0.02: add service hours for ie: old tactics delete. In worker and global conf. (!time zones)
 # todo: v0.02: test, test and test
+# todo: v0.02: add sql's to repo
 
 import time
 

@@ -9,6 +9,10 @@
 # todo: v0.02: fix worker name: for home.pl:" defaultValue
 # todo: v0.02: stock fee sucks, it is based on expected yield, not on price on price when sell (fe:
 #  yield not reach, but sold after x periods)
+# todo: v0.02: better woprkers queue - worker wait, when other worker are updating record status pool omn start
+# todo: v0.02: how many workers are optimal number for current machine - can bee calculated as done similar operations/second,
+# todo: v0.02: application performance: less print and others
+# todo: v0.02: BUG: same tactics generated in same time < need to be fix immediately. Only one worker can generate tactics list in one time
 import time
 
 

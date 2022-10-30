@@ -1,10 +1,9 @@
 # Stock tactics v0.02dev
-
-# todo v0.02: create view to quick view structured data
+# DONE: todo: v0.01: simple error handling with logs
+# DONE: todo: v0.02: create view to quick view structured data
 # todo v0.02: create def's
-# DONE: todo: error handling with logs
-# todo v0.02: add version avariable in json file??
-# todo v0.02: list idnicators names and tech names - easier to group test
+# todo v0.02: add version number to json file??
+# todo v0.02: Documentation: list indicators names and tech names - easier to group test.
 
 from db_works import db_connect
 import measures_and_dimensions as md

@@ -635,7 +635,7 @@ if __name__ == "__main__":
         print("score2:")
         print(score_2)
 
-        if score_2 >= 250 and score_4 == 1 and score_3 >= 0.75:
+        if score_2 >= 250:  # and score_4 == 1 and score_3 >= 0.75:
             cursor.execute(
                 "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_results_table_name +" (download_settings_id, tactic_id, result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4, worker_id)  values "
                                                   "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (

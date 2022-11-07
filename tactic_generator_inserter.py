@@ -19,10 +19,10 @@ if __name__ == "__main__":
     cursor, cnxn = db_connect()
 
     tactic_group_data = {
-        "tactic_group_name": "RSI first tests v202211072149",
+        "tactic_group_name": "RSI first tests",
         "tactic_group_category": "single indicators",
         "tactic_group_stock_tactics_version": "0.02dev",
-        "download_settings_id": [4],  #[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+        "download_settings_id": [5],  #[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
         "test_stake": [100],
         "buy_indicator_1_name": ["rsi_2", "rsi_3", "rsi_4", "rsi_5", "rsi_6", "rsi_7", "rsi_9", "rsi_10", "rsi_12",
                                  "rsi_14", "rsi_16", "rsi_20", "rsi_21", "rsi_24", "rsi_30", "rsi_40", "rsi_50", "rsi_100", "rsi_200"],

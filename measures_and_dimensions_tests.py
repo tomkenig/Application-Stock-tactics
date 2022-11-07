@@ -1,40 +1,3 @@
-# todo: v0.02: combination table. Can be stored in other schema
-# todo: v0.02: pep8
-# todo: v0.02: do smth with updates fe.: one update DB/INE INSERT. Less connections to DB
-# todo: v0.02: separate tactics and OHLC (can be even on other dbs)
-# todo: v0.02: fix to many print
-# todo: v0.02: code clean
-# todo: v0.02: fix zero-devide error in data frame (hard to reach)
-# todo: v0.02: create process to delete old results and tactics
-# todo: v0.02: decide witch results are valuable. Fe: every year winn, almost all months win, minimum profit etc.
-# todo: v0.02: add to results string 4 additional values with times, with open and close times. It will be helpfull in
-#  multitactic analysis. Which are the best and doesn't cross other tactics
-# todo: v0.02: "if score_2 >= 200:" -- add this int config json
-# todo: v0.02: indicators: RSI divergention price vs RSI
-# todo: v0.02: indicators: all williams indicators
-# DONE: todo: update and lock records
-# DONE: todo: tactic_status table with data
-# DONE: todo: insert tactic generator pre data in db
-# DONE: todo: do smth with long sting in tactics (anl. functions string). f. string in tactic generator
-# DONE: todo: Ad Worker id \
-# DONE: todo: test_stock_fee = -0.002, do dynamic not static!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NOW
-# DONE: todo: error handling
-# DONE: todo: # Delete it on prod open_time = str(1631042226) + '000'
-# DONE: todo: test parallel workers
-# todo: v0.02: functions interpretation
-# todo: v0.02: anl functions check
-# todo: v0.02: documentation
-# todo: v0.02: test tactic signal creation (ok/not)
-# DONE: todo: change 0.01dev to 0.01 and add tag into all files
-# DONE: todo: v0.02: fix errors, when more than one tactic_Group is in one set to analayse
-# todo: v0.02: indicators outside TA-LIB (fe. CHOP, other from trafing course FXMAG (aligators etc.)
-
-"""
-pip install mysql-connector-python
-pip install pandas
-pip install numpy
-plan 2022/02/03
-"""
 # Stock tactics v0.02dev
 
 # libs
@@ -122,13 +85,13 @@ def get_tactics_to_check():
     update_tactics_data = tactics_data.copy()
 
     # lock records status
-    for i in update_tactics_data:
-        print(i[0])
-        cursor.execute(
-            "UPDATE " + db_tactics_schema_name + "." + db_tactics_table_name +" SET tactic_status_id = 1, worker_id = " + str(worker_id) + " where tactic_id = " + str(
-                i[0]) + " ")
-    print("update status done")
-    cnxn.commit()
+   # for i in update_tactics_data:
+   #     print(i[0])
+   #     cursor.execute(
+   #         "UPDATE " + db_tactics_schema_name + "." + db_tactics_table_name +" SET tactic_status_id = 1, worker_id = " + str(worker_id) + " where tactic_id = " + str(
+   #             i[0]) + " ")
+    #print("update status done")
+    #cnxn.commit()
     return tactics_data
 
 # download OHLC data from DWH
@@ -446,7 +409,7 @@ def get_indicators_momentum_willr(period_list):
         df["willr_"+str(i)] = ta.WILLR(df["high"], df["low"], df["close"], timeperiod=i)
 
 
-# todo: indicators outside TA-LIB (fe. CHOP, other from trafing course FXMAG (aligators etc.)
+#
 
 # VOLUME INDICATORS
 
@@ -578,7 +541,7 @@ if __name__ == "__main__":
     cursor, cnxn = db_connect()
 
     # register worker
-    worker_name, worker_id = register_worker()
+    # worker_name, worker_id = register_worker()
 
     # Delete it on prod
     # open_time = str(1631042226) + '000'
@@ -587,7 +550,7 @@ if __name__ == "__main__":
     tactics_data = get_tactics_to_check()
 
     # get only data for one settings_id. Don't blend settings _id in one iteration
-    download_settings_id = tactics_data[0][1]
+    download_settings_id = 11
 
     # print(tactics_data)
     print("select done settings done")
@@ -604,8 +567,12 @@ if __name__ == "__main__":
     get_indicators_basics()
 
     # activate analytic functions from tactics set
-    eval(tactics_data[0][6])
-    print(tactics_data[0][6])
+
+    get_indicators_momentum_roc([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
+    get_indicators_momentum_rocp([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
+    get_indicators_momentum_rocr([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
+    get_indicators_momentum_rocr100([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
+    get_indicators_momentum_rsi([2, 3, 4, 5, 6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200]) # ta lib nieprzyjmie wartosci RSI = 1!!!
 
     # export results to xlsx. Work fine, when all analytical functions needed are activated.
     # export_results_to_xls()
@@ -619,31 +586,10 @@ if __name__ == "__main__":
 
     df_bak = df.copy()
 
-    for i in range(len(tactics_data)):  # in tactics_data:
-        print(i)
-        result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4 = get_test_result(
-            int(tactics_data[i][2]), tactics_data[i][3], tactics_data[i][4], tactics_data[i][5], tactics_data[i][7],
-            tactics_data[i][8], tactics_data[i][9])
+    #for i in range(len(tactics_data)):  # in tactics_data:
+    #    print(i)
+    #    result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4 = get_test_result(
+    #        int(tactics_data[i][2]), tactics_data[i][3], tactics_data[i][4], tactics_data[i][5], tactics_data[i][7],
+    #        tactics_data[i][8], tactics_data[i][9])
 
-        cursor.execute(
-            "UPDATE " + db_tactics_schema_name + "." + db_tactics_table_name +" SET tactic_status_id = 2 where tactic_id = " + str(
-                tactics_data[i][0]) + " ")
-        print("update status done")
-        cnxn.commit()
-
-        # insert results if results are good enough
-        # todo: read upper scripts and rewrite script listed below from 0
-        print("score2:")
-        print(score_2)
-
-        if score_2 >= 400 and score_1 >= 100 and score_4 == 1:  # and score_3 >= 0.75:
-            cursor.execute(
-                "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_results_table_name +" (download_settings_id, tactic_id, result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4, worker_id)  values "
-                                                  "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (
-                    download_settings_id, str(tactics_data[i][0]), result_string_1, result_string_2, result_string_3,
-                    str(int(score_1)), str(int(score_2)), str(score_3), str(score_4), worker_id))
-
-        print("insert done or not")
-        df = df_bak.copy()  # absolutly needed. Simple assignment doesn't work in pandas
-        # print(df)
-        cnxn.commit()
+    export_results_to_xls()

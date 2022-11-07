@@ -13,17 +13,24 @@
 # todo: v0.02: how many workers are optimal number for current machine - can bee calculated as done similar operations/second,
 # todo: v0.02: application performance: less print and others
 # todo: v0.02: BUG: same tactics generated in same time < need to be fix immediately. Only one worker can generate tactics list in one time
+# todo: v0.02: New worker idea: run every 5 minutes. If process active, then exit. Process active - there are any record updated in tactics in last 5 min.
+# maybee worker keep-alive is a good idea
+# todo: v0.02: add new indicator :earn per signal
+# todo: v0.02: round results in result string - less space
+# todo: v0.02: RSI test sux - values are x 100
+# todo: v0.02: when there is a flock, maybe worker... is not neccesary?
 import time
-
 
 if __name__ == "__main__":
     i = 0
     while i < 99999:
         try:
+            print("You can quit in the next 5 seconds...")
+            time.sleep(5)
             exec(open("measures_and_dimensions.py").read())
             i += 1
             print(i)
         except:
             print("waiting...")
-            time.sleep(100)
+            time.sleep(10)
             continue

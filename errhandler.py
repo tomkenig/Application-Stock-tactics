@@ -4,7 +4,7 @@
 # DONE: todo: convert to dict
 # DONE: todo: create log directory
 # todo: v0.02: use also logging library
-
+# todo: v0.02: change json dump to dumps and then dump as a text file - no special chars
 # Stock tactics v0.02dev
 
 import os

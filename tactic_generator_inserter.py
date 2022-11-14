@@ -14,15 +14,16 @@ if __name__ == "__main__":
     # get configuration
     db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, \
     db_tactics_table_name, db_tactics_groups_table_name, \
-    db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE = \
+    db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, TMP_DIR_PATH, \
+    TACTICS_PACK_SIZE, worker_tactics_generator_work_hours, worker_tactics_generator_sleep = \
         md.get_settings_json()
     cursor, cnxn = db_connect()
 
     tactic_group_data = {
-        "tactic_group_name": "RSI first tests",
+        "tactic_group_name": "RSI first tests 20221013",
         "tactic_group_category": "single indicators",
         "tactic_group_stock_tactics_version": "0.02dev",
-        "download_settings_id": [5],  #[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+        "download_settings_id": [2],  #[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
         "test_stake": [100],
         "buy_indicator_1_name": ["rsi_2", "rsi_3", "rsi_4", "rsi_5", "rsi_6", "rsi_7", "rsi_9", "rsi_10", "rsi_12",
                                  "rsi_14", "rsi_16", "rsi_20", "rsi_21", "rsi_24", "rsi_30", "rsi_40", "rsi_50", "rsi_100", "rsi_200"],

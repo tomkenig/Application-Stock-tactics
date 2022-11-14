@@ -68,8 +68,14 @@ def get_settings_json():
     db_tactics_workers_table_name = app_conf["db_tactics_workers_table_name"]
     TMP_DIR_PATH = app_conf["tmp_dir_path"]
     TACTICS_PACK_SIZE = app_conf["tactics_pack_size"]
-    return db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name, db_tactics_groups_table_name, \
-           db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE
+    worker_tactics_generator_work_hours = app_conf["worker_tactics_generator_work_hours"]
+    worker_tactics_generator_sleep = app_conf["worker_tactics_generator_sleep"]
+
+    return db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, \
+           db_tactics_table_name, db_tactics_groups_table_name, db_tactics_analyse_table_name, \
+           db_tactics_results_table_name, db_tactics_workers_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE, \
+           worker_tactics_generator_work_hours, worker_tactics_generator_sleep
+
 
 # create temporary directory for downloaded files
 def create_temp_dir(tmp_dir_path_in):
@@ -569,7 +575,7 @@ def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_buy_v
 if __name__ == "__main__":
     # get configuration
     db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name, db_tactics_groups_table_name \
-        , db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE = get_settings_json()
+        , db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE, worker_tactics_generator_work_hours, worker_tactics_generator_sleep = get_settings_json()
 
     # create or clear temp dir
     create_temp_dir(TMP_DIR_PATH)
@@ -636,7 +642,7 @@ if __name__ == "__main__":
         print("score2:")
         print(score_2)
 
-        if score_2 >= 400 and score_1 >= 100 and score_4 == 1:  # and score_3 >= 0.75:
+        if score_2 >= -1000000:  # 400 and score_1 >= 100 and score_4 == 1:  # and score_3 >= 0.75:
             cursor.execute(
                 "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_results_table_name +" (download_settings_id, tactic_id, result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4, worker_id)  values "
                                                   "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (

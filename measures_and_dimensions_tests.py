@@ -1,3 +1,41 @@
+# todo: v0.02: combination table. Can be stored in other schema
+# todo: v0.02: pep8
+# todo: v0.02: do smth with updates fe.: one update DB/INE INSERT. Less connections to DB
+# todo: v0.02: separate tactics and OHLC (can be even on other dbs)
+# todo: v0.02: fix to many print
+# todo: v0.02: code clean
+# todo: v0.02: fix zero-devide error in data frame (hard to reach)
+# todo: v0.02: create process to delete old results and tactics
+# todo: v0.02: decide witch results are valuable. Fe: every year winn, almost all months win, minimum profit etc.
+# todo: v0.02: add to results string 4 additional values with times, with open and close times. It will be helpfull in
+#  multitactic analysis. Which are the best and doesn't cross other tactics
+# todo: v0.02: "if score_2 >= 200:" -- add this int config json
+# todo: v0.02: indicators: RSI divergention price vs RSI
+# todo: v0.02: indicators: all williams indicators
+# DONE: todo: update and lock records
+# DONE: todo: tactic_status table with data
+# DONE: todo: insert tactic generator pre data in db
+# DONE: todo: do smth with long sting in tactics (anl. functions string). f. string in tactic generator
+# DONE: todo: Ad Worker id \
+# DONE: todo: test_stock_fee = -0.002, do dynamic not static!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NOW
+# DONE: todo: error handling
+# DONE: todo: # Delete it on prod open_time = str(1631042226) + '000'
+# DONE: todo: test parallel workers
+# todo: v0.02: functions interpretation
+# todo: v0.02: anl functions check
+# todo: v0.02: documentation
+# todo: v0.02: test tactic signal creation (ok/not)
+# DONE: todo: change 0.01dev to 0.01 and add tag into all files
+# DONE: todo: v0.02: fix errors, when more than one tactic_Group is in one set to analayse
+# DONE: todo: v0.02: tactic_workers change - always insert new record (new worker)
+# todo: v0.02: indicators outside TA-LIB (fe. CHOP, other from trafing course FXMAG (aligators etc.)
+
+"""
+pip install mysql-connector-python
+pip install pandas
+pip install numpy
+plan 2022/02/03
+"""
 # Stock tactics v0.02dev
 
 # libs
@@ -29,10 +67,18 @@ def get_settings_json():
     db_tactics_analyse_table_name = app_conf["db_tactics_analyse_table_name"]
     db_tactics_results_table_name = app_conf["db_tactics_results_table_name"]
     db_tactics_workers_table_name = app_conf["db_tactics_workers_table_name"]
+    db_tactics_config_table_name = app_conf["db_tactics_config_table_name"]
     TMP_DIR_PATH = app_conf["tmp_dir_path"]
     TACTICS_PACK_SIZE = app_conf["tactics_pack_size"]
-    return db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name, db_tactics_groups_table_name, \
-           db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE
+    worker_tactics_generator_work_hours = app_conf["worker_tactics_generator_work_hours"]
+    worker_tactics_generator_sleep = app_conf["worker_tactics_generator_sleep"]
+
+    return db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, \
+           db_tactics_table_name, db_tactics_groups_table_name, db_tactics_analyse_table_name, \
+           db_tactics_results_table_name, db_tactics_workers_table_name, db_tactics_config_table_name, \
+           TMP_DIR_PATH, TACTICS_PACK_SIZE, \
+           worker_tactics_generator_work_hours, worker_tactics_generator_sleep
+
 
 # create temporary directory for downloaded files
 def create_temp_dir(tmp_dir_path_in):
@@ -50,48 +96,59 @@ def delete_old_files():
     except OSError as error:
         print(error)
 
+# todo:
+def lock_other_workers():
+    cursor.execute("LOCK TABLES " + db_tactics_schema_name + "." + db_tactics_table_name + " WRITE,"
+                   " " + db_tactics_schema_name + "." + db_tactics_groups_table_name + " WRITE,"
+                   " " + db_tactics_schema_name + "." + db_binance_settings_table_name + " WRITE,"                                                                               
+                   " " + db_tactics_schema_name + "." + db_tactics_analyse_table_name + " WRITE;")
+
+def unlock_other_workers():
+    cursor.execute("UNLOCK TABLES;")
+
 
 def register_worker():
-    worker_name = str(os.getenv('COMPUTERNAME', 'defaultValue'))
-    print(worker_name)
+    worker_hostname = str(os.getenv('COMPUTERNAME', 'defaultValue'))
+    print(worker_hostname)
     try:
         try:
-            cursor.execute("select worker_id FROM " + db_tactics_schema_name + "." + db_tactics_workers_table_name + " WHERE worker_name = '" + worker_name + "' ;")
-            worker_id = cursor.fetchall()[0][0]
-            cursor.execute("UPDATE " + db_tactics_schema_name + "." + db_tactics_workers_table_name + " SET last_run_timestamp = CURRENT_TIMESTAMP where worker_name = '" + worker_name + "' ;")
-            print(worker_id)
-            cnxn.commit()
-        except:
-            cursor.execute("INSERT into " + db_tactics_schema_name + "." + db_tactics_workers_table_name + " (worker_name) values ('"+worker_name+"') ; ")
+            cursor.execute("INSERT into " + db_tactics_schema_name + "." + db_tactics_workers_table_name + " (worker_hostname) values ('"+worker_hostname+"') ; ")
             worker_id = str(cursor.lastrowid)
             print(worker_id)
             cnxn.commit()
+        except:
+            exit()
     except Exception as e:
         eh.errhandler_log(e)
-    return worker_name, worker_id
+    return worker_hostname, worker_id
 
 
 # todo: lock record status in get_tactics_to_check()
 def get_tactics_to_check():
-    cursor.execute("SELECT tactic_id, a.download_settings_id, test_stake, buy_indicator_1_name, buy_indicator_1_value, "
-                   "buy_indicator_1_operator, buy_indicator_1_functions, yield_expected, wait_periods, stock_fee "
-                   "FROM " + db_tactics_schema_name + "." + db_tactics_analyse_table_name + " a "
-                   " join (SELECT download_settings_id, tactic_group_id FROM " + db_tactics_schema_name + "." + db_tactics_table_name +
-                   " where tactic_status_id = 0 limit 1 ) b "
-                   " on a.download_settings_id = b.download_settings_id "
-                   " and a.tactic_group_id = b.tactic_group_id"                                                                         
-                   " where tactic_status_id = 0 limit " + str(TACTICS_PACK_SIZE) + ";")
-    tactics_data = cursor.fetchall()
-    update_tactics_data = tactics_data.copy()
+    lock_other_workers()
+    try:
+        cursor.execute("SELECT tactic_id, a.download_settings_id, test_stake, buy_indicator_1_name, buy_indicator_1_value, "
+                       "buy_indicator_1_operator, buy_indicator_1_functions, yield_expected, wait_periods, stock_fee "
+                       "FROM " + db_tactics_schema_name + "." + db_tactics_analyse_table_name + " a "
+                       " join (SELECT download_settings_id, tactic_group_id FROM " + db_tactics_schema_name + "." + db_tactics_table_name +
+                       " where tactic_status_id = 0 limit 1 ) b "
+                       " on a.download_settings_id = b.download_settings_id "
+                       " and a.tactic_group_id = b.tactic_group_id"                                                                         
+                       " where tactic_status_id = 0 limit " + str(TACTICS_PACK_SIZE) + ";")
+        tactics_data = cursor.fetchall()
+        update_tactics_data = tactics_data.copy()
+    except Exception as e:
+        eh.errhandler_log(e)
 
-    # lock records status
-   # for i in update_tactics_data:
-   #     print(i[0])
-   #     cursor.execute(
-   #         "UPDATE " + db_tactics_schema_name + "." + db_tactics_table_name +" SET tactic_status_id = 1, worker_id = " + str(worker_id) + " where tactic_id = " + str(
-   #             i[0]) + " ")
-    #print("update status done")
-    #cnxn.commit()
+    # change records status
+    for i in update_tactics_data:
+        print(i[0])
+        cursor.execute(
+            "UPDATE " + db_tactics_schema_name + "." + db_tactics_table_name +" SET tactic_status_id = 1, worker_id = " + str(worker_id) + " where tactic_id = " + str(
+                i[0]) + " ")
+    print("update status done")
+    unlock_other_workers()
+    cnxn.commit()
     return tactics_data
 
 # download OHLC data from DWH
@@ -227,201 +284,25 @@ def get_indicators_averages_cross_perioids():
     df["cross_period_sma_price_200"] = np.where((df["sma_200"] < df["close"]), -1, 1)
 
 
-# MOMENTUM INDICATORS
-
-def get_indicators_momentum_adx(period_list):
-    # ADX Average directional movement index
-    # checked with tradingview
-    # use only combined with other indicators
-    for i in period_list:
-        df["adx_"+str(i)] = ta.ADX(df["high"], df["low"], df["close"], timeperiod=i)
-
-
-def get_indicators_momentum_adxr(period_list):
-    # ADXR Average directional movement index rating
-    for i in period_list:
-        df["adxr_"+str(i)] = ta.ADXR(df["high"], df["low"], df["close"], timeperiod=i)
-
-
-
-def get_indicators_momentum_apo():
-    # verification: apo_10_20 ok, other based on ta-lib not, but check them
-    # name: Absolute price oscillator
-    # interpretation: bearish market or bullish market
-    # crossing above 0 - bullish ; crossing below 0 - berish
-    # APO = Shorter Period EMA – Longer Period EMA
-    # problems: talib and pt-lib calculations are not pass with pattern
-    # require: EMA's
-    df["apo_10_20"] = df["ema_10"] - df["ema_20"]  # standard
-    df["apo_talib_10_20"] = ta.APO(df["close"], fastperiod=10, slowperiod=20, matype=0)  # standart tradingview
-    df["apo_talib_12_26"] = ta.APO(df["close"], fastperiod=12, slowperiod=26, matype=0)
-
-
-
-def get_indicators_momentum_apo_cross():
-    # verification: apo_cross_10_20 ok, other based on ta-lib not, but check them
-    # token
-    # 1 - crossing to bullish ; 0 - crossing to bearish
-    df["apo_cross_10_20"] = np.where((df["apo_10_20"] > 0) & (df["apo_10_20"].shift(1) < 0), 1,
-                                     np.where((df["apo_10_20"] < 0) & (df["apo_10_20"].shift(1) > 0), -1, 0))
-    df["apo_cross_talib_10_20"] = np.where((df["apo_talib_10_20"] > 0) & (df["apo_talib_10_20"].shift(1) < 0), 1,
-                                     np.where((df["apo_talib_10_20"] < 0) & (df["apo_talib_10_20"].shift(1) > 0),
-                                              -1, 0))
-    df["apo_cross_talib_12_26"] = np.where((df["apo_talib_12_26"] > 0) & (df["apo_talib_12_26"].shift(1) < 0), 1,
-                                     np.where((df["apo_talib_12_26"] < 0) & (df["apo_talib_12_26"].shift(1) > 0),
-                                              -1, 0))
-
-
-def get_indicators_momentum_aroon(period_list):
-    # https://tradersarea.pl/aroon-indicator-wskaznik-analizy-technicznej/
-    #AROON
-    # verification:
-    # tradingView: ok
-
-    for i in period_list:
-        df["aroondown_"+str(i)], df["aroonup_"+str(i)] = ta.AROON(df["high"], df["low"], timeperiod=i)
-
-        #AROONOSC
-        df["aroonosc_"+str(i)] = ta.AROONOSC(df["high"], df["low"], timeperiod=i)
-
-def get_indicators_momentum_bop(period_list):
-    # BOP - Balance Of Power
-    # checked with tradingview
-    df["bop"] = pta.bop(df["open"], df["high"], df["low"], df["close"])
-
-    # BOP - Balance Of Power smoothed
-    # autor: token
-    for i in period_list:
-        df["bop_sma_" + str(i)] = pta.sma(df["bop"], length=i)
-
-def get_indicators_momentum_cci(period_list):
-    # CCI -- tradingView.. Oversold: -80 - -300/-500 - infinity scale
-    for i in period_list:
-        df["cci_"+str(i)] = ta.CCI(df["high"], df["low"], df["close"], i)
-
-def get_indicators_momentum_cmo(period_list):
-    #CMO - Chande Momentum Oscillator
-    for i in period_list:
-        df["cmo_"+str(i)] = pta.cmo(df["close"], timeperiod=i)
-
-def get_indicators_momentum_dx(period_list):
-    # DX - Directional Movement Index
-    for i in period_list:
-        df["dx_"+str(i)] = ta.DX(df["high"], df["low"], df["close"], timeperiod=i)
-
-
-def get_indicators_momentum_macd():
-
-    # MACD
-    df["macd"], df["macdsignal"], df["macdhist"] = ta.MACD(df["close"], fastperiod=12, slowperiod=26, signalperiod=9)
-    # 1- buy signal -1  sell signal
-    df["upcross_downcross_macd_signal"] = np.where((df["macd"] - df["macdsignal"] > 0) & (df["macd"].shift(1) - df["macdsignal"].shift(1) < 0), 1, 0) +\
-                             np.where((df["macd"] - df["macdsignal"] < 0) & (df["macd"].shift(1) - df["macdsignal"].shift(1) > 0), -1, 0)
-
-# todo: MACDEXT - MACD with controllable MA type
-# todo: MACDFIX - Moving Average Convergence/Divergence Fix 12/26
-
-def get_indicators_momentum_mfi(period_list):
-    # MFI - Money Flow Index
-    for i in period_list:
-        df["mfi_"+str(i)] = ta.MFI(df["high"], df["low"], df["close"], df["volume"], timeperiod=i)
-
-def get_indicators_momentum_minus_di(period_list):
-    # MINUS_DI - Minus Directional Indicator
-    for i in period_list:
-        df["minus_di_"+str(i)] = ta.MINUS_DI(df["high"], df["low"], df["close"], timeperiod=i)
-
-def get_indicators_momentum_minus_dm(period_list):
-    # MINUS_DM - Minus Directional Movement
-    for i in period_list:
-        df["minus_dm_"+str(i)] = ta.MINUS_DM(df["high"], df["low"], timeperiod=i)
-
-def get_indicators_momentum_mom(period_list):
-    # MOM - Momentum
-    for i in period_list:
-        df["mom_"+str(i)] = ta.MOM(df["close"], timeperiod=i)
-
-def get_indicators_momentum_plus_di(period_list):
-    # MINUS_DI - Minus Directional Indicator (negative)
-    for i in period_list:
-        df["plus_di_"+str(i)] = ta.PLUS_DI(df["high"], df["low"], df["close"], timeperiod=i)
-
-def get_indicators_momentum_plus_dm(period_list):
-    # MINUS_DM - Minus Directional Movement (positive)
-    for i in period_list:
-        df["plus_dm_"+str(i)] = ta.PLUS_DM(df["high"], df["low"], timeperiod=i)
-
-def get_indicators_momentum_ppo():
-    # PPO - Percentage Price Oscillator
-    df["ppo_12_26"] = ta.PPO(df["close"], fastperiod=12, slowperiod=26, matype=0)  # standart
-    df["ppo_10_21"] = ta.PPO(df["close"], fastperiod=10, slowperiod=21, matype=0)  # tradingview corr
-
 def get_indicators_momentum_roc(period_list):
     # ROC - Rate of change : ((price/prevPrice)-1)*100
     for i in period_list:
         df["roc_"+str(i)] = ta.ROC(df["close"], timeperiod=i)
-
-def get_indicators_momentum_rocp(period_list):
-    # ROCP - Rate of change Percentage: (price-prevPrice)/prevPrice
-    for i in period_list:
-        df["rocp_"+str(i)] = ta.ROCP(df["close"], timeperiod=i)
-
-def get_indicators_momentum_rocr(period_list):
-    # ROCR - Rate of change ratio: (price/prevPrice)
-    for i in period_list:
-        df["rocr_"+str(i)] = ta.ROCR(df["close"], timeperiod=i)
-
-def get_indicators_momentum_rocr100(period_list):
-    # ROCR100 - Rate of change ratio 100 scale: (price/prevPrice)*100
-    for i in period_list:
-        df["rocr100_"+str(i)] = ta.ROCR100(df["close"], timeperiod=i)
 
 def get_indicators_momentum_rsi(period_list):
     # RSI - Relative Strength Index
     for i in period_list:
         df["rsi_"+str(i)] = ta.RSI(df["close"], timeperiod=i)
 
-def get_indicators_momentum_stoch():
-    # STOCH - Stochastic
-    df["slowk"], df["slowd"] = ta.STOCH(df["high"], df["low"], df["close"], fastk_period=5, slowk_period=3, slowk_matype=0, slowd_period=3, slowd_matype=0)
-
-def get_indicators_momentum_stochf():
-    # STOCHF - Stochastic Fast
-    df["fastk"], df["fastd"] = ta.STOCHF(df["high"], df["low"], df["close"], fastk_period=5, fastd_period=3, fastd_matype=0)
-
-def get_indicators_momentum_stochrsi(period_list):
-    # STOCHRSI - Stochastic Relative Strength Index
+def get_indicators_momentum_roc_pta(period_list):
+    # ROC - Rate of change : ((price/prevPrice)-1)*100
     for i in period_list:
-        df["stochrsi_fast_k_"+str(i)], df["stochrsi_fast_d_"+str(i)] = ta.STOCHRSI(df["close"], timeperiod=i, fastk_period=5, fastd_period=3, fastd_matype=0)
+        df["roc_pta_"+str(i)] = pta.roc(df["close"], length=i)
 
-def get_indicators_momentum_trix(period_list):
-    # TRIX - 1-day Rate-Of-Change (ROC) of a Triple Smooth EMA
-    # 30 standard time period
+def get_indicators_momentum_rsi_pta(period_list):
+    # RSI - Relative Strength Index
     for i in period_list:
-        df["trix_"+str(i)] = ta.TRIX(df["close"], timeperiod=i)
-
-def get_indicators_momentum_ultosc():
-    # ULTOSC - Ultimate Oscillator
-    df["ultosc_7_14_28"] = ta.ULTOSC(df["high"], df["low"], df["close"], timeperiod1=7, timeperiod2=14, timeperiod3=28)
-
-def get_indicators_momentum_willr(period_list):
-    for i in period_list:
-        df["willr_"+str(i)] = ta.WILLR(df["high"], df["low"], df["close"], timeperiod=i)
-
-
-#
-
-# VOLUME INDICATORS
-
-def get_indicators_volume_chaikin_ad():
-    df["chaikin_ad"] = ta.AD(df["high"], df["low"], df["close"], df["volume"])
-
-def get_indicators_volume_chaikin_ad_oscillator():
-    df["chaikin_ad_oscillator_3_10"] = ta.ADOSC(df["high"], df["low"], df["close"], df["volume"], fastperiod=3, slowperiod=10)
-
-def get_indicators_volume_obv():
-    df["chaikin_obv"] = ta.OBV(df["close"], df["volume"])
-
+        df["rsi_pta_"+str(i)] = pta.rsi(df["close"], length=i)
 
 # PRINT RESULTS
 def print_results():
@@ -532,7 +413,7 @@ def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_buy_v
 if __name__ == "__main__":
     # get configuration
     db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name, db_tactics_groups_table_name \
-        , db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE = get_settings_json()
+        , db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, db_tactics_config_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE, worker_tactics_generator_work_hours, worker_tactics_generator_sleep = get_settings_json()
 
     # create or clear temp dir
     create_temp_dir(TMP_DIR_PATH)
@@ -540,14 +421,6 @@ if __name__ == "__main__":
     # connect to db
     cursor, cnxn = db_connect()
 
-    # register worker
-    # worker_name, worker_id = register_worker()
-
-    # Delete it on prod
-    # open_time = str(1631042226) + '000'
-
-    # downloads tactics to check
-    tactics_data = get_tactics_to_check()
 
     # get only data for one settings_id. Don't blend settings _id in one iteration
     download_settings_id = 11
@@ -567,29 +440,10 @@ if __name__ == "__main__":
     get_indicators_basics()
 
     # activate analytic functions from tactics set
-
-    get_indicators_momentum_roc([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
-    get_indicators_momentum_rocp([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
-    get_indicators_momentum_rocr([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
-    get_indicators_momentum_rocr100([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
-    get_indicators_momentum_rsi([2, 3, 4, 5, 6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200]) # ta lib nieprzyjmie wartosci RSI = 1!!!
+    get_indicators_momentum_roc([5, 8, 10, 15])
+    get_indicators_momentum_rsi([5, 8, 10, 15])
+    get_indicators_momentum_roc_pta([5, 8, 10, 15])
+    get_indicators_momentum_rsi_pta([5, 8, 10, 15])
 
     # export results to xlsx. Work fine, when all analytical functions needed are activated.
-    # export_results_to_xls()
-
-    # print current df
-    # print_results()
-
-    # REAL TEST RUN
-    print("begin test")
-    print(len(tactics_data))
-
-    df_bak = df.copy()
-
-    #for i in range(len(tactics_data)):  # in tactics_data:
-    #    print(i)
-    #    result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4 = get_test_result(
-    #        int(tactics_data[i][2]), tactics_data[i][3], tactics_data[i][4], tactics_data[i][5], tactics_data[i][7],
-    #        tactics_data[i][8], tactics_data[i][9])
-
     export_results_to_xls()

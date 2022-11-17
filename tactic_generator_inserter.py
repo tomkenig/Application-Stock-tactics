@@ -14,7 +14,7 @@ if __name__ == "__main__":
     # get configuration
     db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, \
     db_tactics_table_name, db_tactics_groups_table_name, \
-    db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, TMP_DIR_PATH, \
+    db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, db_tactics_config_table_name, TMP_DIR_PATH, \
     TACTICS_PACK_SIZE, worker_tactics_generator_work_hours, worker_tactics_generator_sleep = \
         md.get_settings_json()
     cursor, cnxn = db_connect()

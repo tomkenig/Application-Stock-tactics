@@ -6,7 +6,7 @@
 # todo: v0.02: add service hours for ie: old tactics delete. In worker and global conf. (!time zones)
 # todo: v0.02: test, test and test
 # todo: v0.02: add sql's to repo
-# todo: v0.02: fix worker name: for home.pl:" defaultValue
+# todo: v0.02: fix worker name: for home.pl:" defaultValue as hostname
 # todo: v0.02: stock fee sucks, it is based on expected yield, not on price on price when sell (fe:
 #  yield not reach, but sold after x periods)
 # todo: v0.02: better woprkers queue - worker wait, when other worker are updating record status pool omn start

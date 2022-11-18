@@ -16,7 +16,7 @@
 # DONE: todo: need to be equal as m&d names
 # DONE: todo: error handling
 # todo: v0.02: get_settings_json() need to be in other file than measureas_and_dimensions (ta-lib expected)
-
+# todo: v0.02: create buffer table, to non colision with stock.tasctics-m&d workers
 
 # libs
 from db_works import db_connect

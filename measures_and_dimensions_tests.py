@@ -268,7 +268,7 @@ def get_indicators_averages_cross():
     df["cross_sma_price_200"] = np.where((df["sma_200"] - df["close"] < 0) & (df["sma_200"].shift(1) - df["close"].shift(1) > 0), 1, 0) +\
                              np.where((df["sma_200"] - df["close"] > 0) & (df["sma_200"].shift(1) - df["close"].shift(1) < 0), -1, 0)
 
-def get_indicators_averages_cross_perioids():
+def get_indicators_averages_cross_periods():
     # todo: as def get_indicators_averages_cross(), but without 0 value. Show, where x is below y or under
     # 1-golden period ;-1 - death period
     df["cross_period_sma_50_200"] = np.where((df["sma_50"] < df["sma_200"]), -1, 1)
@@ -283,6 +283,8 @@ def get_indicators_averages_cross_perioids():
     df["cross_period_sma_price_50"] = np.where((df["sma_50"] < df["close"]), -1, 1)
     df["cross_period_sma_price_200"] = np.where((df["sma_200"] < df["close"]), -1, 1)
 
+def get_indicators_dummy():
+    print("dummy indicator")
 
 def get_indicators_momentum_roc(period_list):
     # ROC - Rate of change : ((price/prevPrice)-1)*100

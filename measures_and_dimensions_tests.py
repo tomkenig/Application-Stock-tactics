@@ -306,6 +306,67 @@ def get_indicators_momentum_rsi_pta(period_list):
     for i in period_list:
         df["rsi_pta_"+str(i)] = pta.rsi(df["close"], length=i)
 
+
+
+# 2022/11/18
+
+def get_indicators_momentum_bop():
+    # BOP - Balance Of Power
+    # checked with tradingview
+    df["bop"] = pta.bop(df["open"], df["high"], df["low"], df["close"])
+
+    # BOP  - cross zero line
+    # checked with tradingview and data
+    # autor: token
+    # 1- buy
+    df["bop_zero_cross"] = np.where((df["bop"] > 0) & (df["bop"].shift(1) < 0), 1, 0) +\
+                           np.where((df["bop"] < 0) & (df["bop"].shift(1) > 0), -1, 0)
+
+    # todo: in future add period_list in function args, but now only 14 and 50
+    # BOP - Balance Of Power smoothed
+    # autor: token
+    # for i in period_list:
+    #     df["bop_sma_" + str(i)] = pta.sma(df["bop"], length=i)
+
+    for i in [14, 50]:
+        df["bop_sma_" + str(i)] = pta.sma(df["bop"], length=i)
+
+        # BOP SMA - cross zero line
+        df["bop_sma_zero_cross_" + str(i)] = np.where((df["bop_sma_" + str(i)] > 0) & (df["bop_sma_" + str(i)].shift(1) < 0), 1, 0) +\
+                               np.where((df["bop_sma_" + str(i)] < 0) & (df["bop_sma_" + str(i)].shift(1) > 0), -1, 0)
+
+        # BOP SMA- trend change - from all halves
+     #   df["bop_sma_trend_change_" + str(i)] = np.where(df["bop_sma_" + str(i)] > df["bop_sma_" + str(i)].shift(1), 1, 0) +\
+     #                                          np.where(df["bop_sma_" + str(i)] < df["bop_sma_" + str(i)].shift(1), 1, 0)
+
+        # BOP - trend change - on down half and up half
+        # - 1 - down half downtrend to uptrend change
+        # + 1 - up half downtrend to uptrend change
+ #       df["bop_sma_trend_change_half_" + str(i)] = np.where((df["bop_sma_" + str(i)] > df["bop_sma_" + str(i)].shift(1) & df["bop_sma_" + str(i)].shift(1) < 0, -1, 0)) +\
+ #                                                   np.where((df["bop_sma_" + str(i)] > df["bop_sma_" + str(i)].shift(1) & df["bop_sma_" + str(i)].shift(1) > 0, 1, 0))
+
+
+        # todo:
+        # (...)
+        # down half: 3 minus and one plus >> 3
+        # down half: 2 minus and one plus >> 2
+        # down half: 1 minus and one plus >> 1
+        # (...)
+        # up half: 3 minus and one plus >> -3
+        # up half: 2 minus and one plus >> -2
+        # up half: 1 minus and one plus >> -1
+
+
+def get_indicators_momentum_mfi(period_list):
+    # MFI - Money Flow Index
+    for i in period_list:
+        df["mfi_"+str(i)] = pta.mfi(df["high"], df["low"], df["close"], df["volume"], length=i)
+
+def get_indicators_momentum_cci(period_list):
+    # CCI -- tradingView.. Oversold: -80 - -300/-500 - infinity scale
+    for i in period_list:
+        df["cci_"+str(i)] = pta.cci(df["high"], df["low"], df["close"], i)
+
 # PRINT RESULTS
 def print_results():
     print(df)

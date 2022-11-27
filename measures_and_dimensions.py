@@ -30,6 +30,7 @@
 # DONE: todo: v0.02: tactic_workers change - always insert new record (new worker)
 # todo: v0.02: indicators outside TA-LIB (fe. CHOP, other from trafing course FXMAG (aligators etc.)
 # todo: v0.02: bulk update status tactics to check - in one query
+# todo: v0.02: floats numbers in scores delayed queries on produced data
 """
 pip install mysql-connector-python
 pip install pandas
@@ -298,6 +299,54 @@ def get_indicators_momentum_rsi(period_list):
     # RSI - Relative Strength Index
     for i in period_list:
         df["rsi_"+str(i)] = pta.rsi(df["close"], length=i)
+
+
+def get_indicators_momentum_bop():
+    # BOP - Balance Of Power
+    # checked with tradingview
+    df["bop"] = pta.bop(df["open"], df["high"], df["low"], df["close"])
+
+    # BOP  - cross zero line
+    # checked with tradingview and data
+    # autor: token
+    # 1- buy
+    df["bop_zero_cross"] = np.where((df["bop"] > 0) & (df["bop"].shift(1) < 0), 1, 0) +\
+                           np.where((df["bop"] < 0) & (df["bop"].shift(1) > 0), -1, 0)
+
+    # todo: in future add period_list in function args, but now only 14 and 50
+    # BOP - Balance Of Power smoothed
+    # autor: token
+    # for i in period_list:
+    #     df["bop_sma_" + str(i)] = pta.sma(df["bop"], length=i)
+
+    for i in [14, 50]:
+        df["bop_sma_" + str(i)] = pta.sma(df["bop"], length=i)
+
+        # BOP SMA - cross zero line
+        df["bop_sma_zero_cross_" + str(i)] = np.where((df["bop_sma_" + str(i)] > 0) & (df["bop_sma_" + str(i)].shift(1) < 0), 1, 0) +\
+                               np.where((df["bop_sma_" + str(i)] < 0) & (df["bop_sma_" + str(i)].shift(1) > 0), -1, 0)
+
+def get_indicators_momentum_mfi(period_list):
+    # MFI - Money Flow Index
+    # TradingView checked - OK
+    for i in period_list:
+        df["mfi_"+str(i)] = pta.mfi(df["high"], df["low"], df["close"], df["volume"], length=i)
+
+def get_indicators_momentum_cci(period_list):
+    # CCI -- tradingView.. Oversold: -80 - -300/-500 - infinity scale
+    for i in period_list:
+        df["cci_"+str(i)] = pta.cci(df["high"], df["low"], df["close"], i)
+
+def get_indicators_momentum_force_idx():
+    # https://school.stockcharts.com/doku.php?id=technical_indicators:force_index
+    # tradingView NOK, but data seems to be good - 1 buy signal on force_index_sma_zero_cross_13
+    df["force_index"] = (df["close"] - df["close"].shift(1)) * df["volume"]
+    df["force_index_sma_13"] = pta.sma(df["force_index"], length=13)
+    df["force_index_sma_zero_cross_13"] = np.where((df["force_index_sma_13"] > 0) &
+                                          (df["force_index_sma_13"].shift(1) < 0), 1, 0) + \
+                                          np.where((df["force_index_sma_13"] < 0) &
+                                          (df["force_index_sma_13"].shift(1) > 0), -1, 0)
+
 
 
 # PRINT RESULTS

@@ -4,6 +4,10 @@
 # todo v0.02: create def's
 # todo v0.02: add version number to json file??
 # todo v0.02: Documentation: list indicators names and tech names - easier to group test.
+# todo v0.02: number of tactic can be reduced by adding low yields to short periods and high yields to wide periods
+# todo v0.02: most of time are spent to calculate tactics on 5m period. Try to reduce yield expected on this period (check)
+# todo v0.02: add column in tactic groups with tactics count ot generate
+
 
 from db_works import db_connect
 import measures_and_dimensions as md
@@ -19,22 +23,18 @@ if __name__ == "__main__":
         md.get_settings_json()
     cursor, cnxn = db_connect()
 
-    tactic_group_data = {
-        "tactic_group_name": "AVG_CROSS first tests 20221119",
-        "tactic_group_category": "single indicators",
-        "tactic_group_stock_tactics_version": "0.02dev",
-        "download_settings_id": [3],  #2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-        "test_stake": [100],
-        "buy_indicator_1_name": ["cross_sma_50_200", "cross_sma_7_14", "cross_sma_7_21", "cross_sma_7_50",
-                                 "cross_sma_price_7", "cross_sma_price_14", "cross_sma_price_21",
-                                 "cross_sma_price_50", "cross_sma_price_200"],
-        "buy_indicator_1_value": [1],
-        "buy_indicator_1_operator": ["=="],
-        "buy_indicator_1_functions": "get_indicators_averages([7, 14, 21, 50, 200]), get_indicators_averages_cross()",
-        "yield_expected": [0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.12, 0.15, 0.17, 0.2, 0.25, 0.3, 0.35, 0.4],
-        "wait_periods": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100],
-        "standard_fee": [0.001]
-    }
+    tactic_group_data = {"tactic_group_name":"ROC",
+                         "tactic_group_category":"single indicators",
+                         "tactic_group_stock_tactics_version":"v0.02dev",
+                         "download_settings_id":[3],
+                         "test_stake":[100],
+                         "buy_indicator_1_name":["roc_1","roc_2","roc_3","roc_4","roc_5","roc_6","roc_7","roc_9","roc_10","roc_12","roc_14","roc_16","roc_20","roc_21","roc_24","roc_30","roc_50","roc_100","roc_200"],
+                         "buy_indicator_1_value":[-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-12,-15,-17,-20,-25,-30,-35,-40,-45,-50,-55,-60,-65,-70],
+                         "buy_indicator_1_operator":["<"],
+                         "buy_indicator_1_functions":"get_indicators_momentum_roc([1,2,3,4,5,6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])",
+                         "yield_expected":[0.01,0.015,0.02,0.025,0.03,0.035,0.04,0.045,0.05,0.06,0.07,0.08,0.09,0.1,0.12,0.15,0.17,0.2,0.25,0.3,0.35,0.4],
+                         "wait_periods":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,20,25,30,35,40,50,60,70,80,90,100,150,200],
+                         "standard_fee":[0.001]}
 
     print(json.dumps(tactic_group_data))
     try:

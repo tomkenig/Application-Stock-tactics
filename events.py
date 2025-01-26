@@ -9,3 +9,4 @@
 import uuid
 
 
+print("CHOINKA, BAŁWAN, ŚWIĘTA")

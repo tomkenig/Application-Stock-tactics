@@ -1,8 +1,8 @@
 # Stock tactics v0.01
 # libs
 #import mysql.connector  # https://dev.mysql.com/doc/connector-python/en/
-# import mysql
-import mariadb as mysql
+import mysql
+# import mariadb as mysql
 import json
 
 
@@ -17,7 +17,7 @@ def get_conn_settings_from_json():
 # connection to db
 def db_connect():
     sql_db_conn = get_conn_settings_from_json()
-    cnxn = mysql.connect(user=sql_db_conn["user"],
+    cnxn = mysql.connector.connect(user=sql_db_conn["user"],
                                    password=sql_db_conn["password"],
                                    host=sql_db_conn["host"],
                                    database=sql_db_conn["database"])

@@ -51,6 +51,8 @@ import os
 import errhandler as eh
 import uuid  # https://docs.python.org/3/library/uuid.html
 import openpyxl
+import stock_functions as sf
+
 
 # todo: make better. All from json
 # get settings from config json
@@ -306,6 +308,9 @@ def get_indicators_momentum_rsi_pta(period_list):
     for i in period_list:
         df["rsi_pta_"+str(i)] = pta.rsi(df["close"], length=i)
 
+def get_indicators_momentum_stoch():
+    # STOCH - Stochastic
+    df["slowk"], df["slowd"] = ta.STOCH(df["high"], df["low"], df["close"], fastk_period=5, slowk_period=3, slowk_matype=0, slowd_period=3, slowd_matype=0)
 
 
 # 2022/11/18
@@ -366,6 +371,30 @@ def get_indicators_momentum_cci(period_list):
     # CCI -- tradingView.. Oversold: -80 - -300/-500 - infinity scale
     for i in period_list:
         df["cci_"+str(i)] = pta.cci(df["high"], df["low"], df["close"], i)
+
+def get_indicators_momentum_force_idx():
+    # https://school.stockcharts.com/doku.php?id=technical_indicators:force_index
+    # tradingView NOK, but data seems to be good - 1 buy signal on force_index_sma_zero_cross_13
+    df["force_index"] = (df["close"] - df["close"].shift(1)) * df["volume"]
+    df["force_index_sma_13"] = pta.sma(df["force_index"], length=13)
+    df["force_index_sma_zero_cross_13"] = np.where((df["force_index_sma_13"] > 0) &
+                                          (df["force_index_sma_13"].shift(1) < 0), 1, 0) + \
+                                          np.where((df["force_index_sma_13"] < 0) &
+                                          (df["force_index_sma_13"].shift(1) > 0), -1, 0)
+
+
+def get_indicators_momentum_cmo(period_list):
+    #CMO - Chande Momentum Oscillator
+    for i in period_list:
+        df["cmo_"+str(i)] = pta.cmo(df["close"], timeperiod=i)
+
+def get_indicators_momentum_dx(period_list):
+    # DX - Directional Movement Index
+    for i in period_list:
+        df["dx_"+str(i)] = ta.DX(df["high"], df["low"], df["close"], timeperiod=i)
+
+
+
 
 # PRINT RESULTS
 def print_results():
@@ -503,10 +532,17 @@ if __name__ == "__main__":
     get_indicators_basics()
 
     # activate analytic functions from tactics set
-    get_indicators_momentum_roc([5, 8, 10, 15])
-    get_indicators_momentum_rsi([5, 8, 10, 15])
-    get_indicators_momentum_roc_pta([5, 8, 10, 15])
-    get_indicators_momentum_rsi_pta([5, 8, 10, 15])
-
+    # get_indicators_momentum_roc([5, 8, 10, 15])
+    # get_indicators_momentum_rsi([5, 8, 10, 15])
+    # get_indicators_momentum_roc_pta([5, 8, 10, 15])
+    # get_indicators_momentum_rsi_pta([5, 8, 10, 15])
+    get_indicators_momentum_bop()
+    get_indicators_momentum_mfi([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
+    get_indicators_momentum_cci([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
+    get_indicators_momentum_force_idx()
+    get_indicators_momentum_rsi([2,3,4,5,6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
+   # sf.get_indicators_momentum_roc([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
+    # sf.get_indicators_volume_chaikin_ad()
+    get_indicators_momentum_stoch()
     # export results to xlsx. Work fine, when all analytical functions needed are activated.
     export_results_to_xls()

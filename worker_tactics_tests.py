@@ -32,5 +32,5 @@ if __name__ == "__main__":
             print(i)
         except:
             print("waiting...")
-            time.sleep(10)
+            time.sleep(5)
             continue

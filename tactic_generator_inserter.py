@@ -13,6 +13,8 @@ from db_works import db_connect
 import measures_and_dimensions as md
 import json
 import errhandler as eh
+import pandas_ta
+import pandas
 
 if __name__ == "__main__":
     # get configuration
@@ -23,15 +25,15 @@ if __name__ == "__main__":
         md.get_settings_json()
     cursor, cnxn = db_connect()
 
-    tactic_group_data = {"tactic_group_name":"ROC",
+    tactic_group_data = {"tactic_group_name":"RSI",
                          "tactic_group_category":"single indicators",
                          "tactic_group_stock_tactics_version":"v0.02dev",
-                         "download_settings_id":[3],
+                         "download_settings_id":[13],
                          "test_stake":[100],
-                         "buy_indicator_1_name":["roc_1","roc_2","roc_3","roc_4","roc_5","roc_6","roc_7","roc_9","roc_10","roc_12","roc_14","roc_16","roc_20","roc_21","roc_24","roc_30","roc_50","roc_100","roc_200"],
-                         "buy_indicator_1_value":[-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-12,-15,-17,-20,-25,-30,-35,-40,-45,-50,-55,-60,-65,-70],
+                         "buy_indicator_1_name":["rsi_2","rsi_3","rsi_4","rsi_5","rsi_6","rsi_7","rsi_9","rsi_10","rsi_12","rsi_14","rsi_16","rsi_20","rsi_21","rsi_24","rsi_30","rsi_50","rsi_100","rsi_200"],
+                         "buy_indicator_1_value":[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 17, 20, 25, 30, 80, 82, 85, 87, 90, 93, 95, 98, 99, 100],
                          "buy_indicator_1_operator":["<"],
-                         "buy_indicator_1_functions":"get_indicators_momentum_roc([1,2,3,4,5,6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])",
+                         "buy_indicator_1_functions":"get_indicators_momentum_rsi([2,3,4,5,6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 30, 50, 100, 200])",
                          "yield_expected":[0.01,0.015,0.02,0.025,0.03,0.035,0.04,0.045,0.05,0.06,0.07,0.08,0.09,0.1,0.12,0.15,0.17,0.2,0.25,0.3,0.35,0.4],
                          "wait_periods":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,20,25,30,35,40,50,60,70,80,90,100,150,200],
                          "standard_fee":[0.001]}

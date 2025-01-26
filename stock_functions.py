@@ -2,9 +2,7 @@
 # todo: create a file with all funtions
 # todo: resing from TA-LIB (not working fine on all your server)
 
-
-
-
+import talib as ta  # install from whl file < https://www.lfd.uci.edu/~gohlke/pythonlibs/#ta-lib
 
 # MOMENTUM INDICATORS
 
@@ -20,7 +18,6 @@ def get_indicators_momentum_adxr(period_list):
     # ADXR Average directional movement index rating
     for i in period_list:
         df["adxr_"+str(i)] = ta.ADXR(df["high"], df["low"], df["close"], timeperiod=i)
-
 
 
 def get_indicators_momentum_apo():
@@ -49,7 +46,6 @@ def get_indicators_momentum_apo_cross():
     df["apo_cross_talib_12_26"] = np.where((df["apo_talib_12_26"] > 0) & (df["apo_talib_12_26"].shift(1) < 0), 1,
                                      np.where((df["apo_talib_12_26"] < 0) & (df["apo_talib_12_26"].shift(1) > 0),
                                               -1, 0))
-
 
 def get_indicators_momentum_aroon(period_list):
     # https://tradersarea.pl/aroon-indicator-wskaznik-analizy-technicznej/
@@ -92,8 +88,15 @@ def get_indicators_momentum_dx(period_list):
 def get_indicators_momentum_macd():
 
     # MACD
-    df["macd"], df["macdsignal"], df["macdhist"] = ta.MACD(df["close"], fastperiod=12, slowperiod=26, signalperiod=9)
+    # https://pl.wikipedia.org/wiki/MACD
+    # Wskaźnik bada zbieżności i rozbieżności średnich ruchomych.
+    # Jest różnicą wartości długoterminowej i krótkoterminowej średniej wykładniczej.
+    # linia MACD przecina linię sygnału od dołu – jest to sygnał do zakupu i zapowiedź trendu wzrostowego.
+    # linia MACD przecina linię sygnału od góry – jest to sygnał do sprzedaży i zapowiedź odwrócenia trendu.
     # 1- buy signal -1  sell signal
+    # todo: -1 and 1 instant as area (not only point when cross)
+    # todo: sygnał, gdy linie zmierzaja do przeciecia z wyprzedzeniem, np dynamika wskazuje ze sie przetna
+    df["macd"], df["macdsignal"], df["macdhist"] = ta.MACD(df["close"], fastperiod=12, slowperiod=26, signalperiod=9)
     df["upcross_downcross_macd_signal"] = np.where((df["macd"] - df["macdsignal"] > 0) & (df["macd"].shift(1) - df["macdsignal"].shift(1) < 0), 1, 0) +\
                              np.where((df["macd"] - df["macdsignal"] < 0) & (df["macd"].shift(1) - df["macdsignal"].shift(1) > 0), -1, 0)
 
@@ -162,6 +165,10 @@ def get_indicators_momentum_rsi(period_list):
 
 def get_indicators_momentum_stoch():
     # STOCH - Stochastic
+    # overbought and oversold signals.
+    # above 80 indicating that an asset is overbought
+    # below 20 indicating that it is oversold
+    # info: https://www.investopedia.com/terms/s/stochasticoscillator.asp
     df["slowk"], df["slowd"] = ta.STOCH(df["high"], df["low"], df["close"], fastk_period=5, slowk_period=3, slowk_matype=0, slowd_period=3, slowd_matype=0)
 
 def get_indicators_momentum_stochf():

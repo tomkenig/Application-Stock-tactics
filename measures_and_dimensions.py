@@ -53,7 +53,8 @@ import errhandler as eh
 import uuid  # https://docs.python.org/3/library/uuid.html
 import openpyxl
 import socket
-
+import talib as ta
+import stock_functions as sf
 # todo: make better. All from json
 # get settings from config json
 def get_settings_json():
@@ -290,16 +291,66 @@ def get_indicators_averages_cross_periods():
     df["cross_period_sma_price_200"] = np.where((df["sma_200"] < df["close"]), -1, 1)
 
 
-def get_indicators_momentum_roc(period_list):
-    # ROC - Rate of change : ((price/prevPrice)-1)*100
-    for i in period_list:
-        df["roc_"+str(i)] = pta.roc(df["close"], length=i)
+# NEW INDICATORS FROM STOCK_FUNCTIONS
 
-def get_indicators_momentum_rsi(period_list):
-    # RSI - Relative Strength Index
-    for i in period_list:
-        df["rsi_"+str(i)] = pta.rsi(df["close"], length=i)
+# MOMENTUM INDICATORS
+# MOMENTUM INDICATORS
+# MOMENTUM INDICATORS
 
+def get_indicators_momentum_adx(period_list):
+    # ADX Average directional movement index
+    # https://en.wikipedia.org/wiki/Average_directional_movement_index
+    # The ADX does not indicate trend direction or momentum, only trend strength
+    # checked with tradingview
+    # interpret: below 20 indicate trend weakness, and readings above 40 indicate trend strengt
+    # use only combined with other indicators
+    for i in period_list:
+        df["adx_"+str(i)] = ta.ADX(df["high"], df["low"], df["close"], timeperiod=i)
+
+def get_indicators_momentum_adxr(period_list):
+    # ADXR Average directional movement index rating
+    for i in period_list:
+        df["adxr_"+str(i)] = ta.ADXR(df["high"], df["low"], df["close"], timeperiod=i)
+
+
+def get_indicators_momentum_apo():
+    # verification: apo_10_20 ok, other based on ta-lib not, but check them
+    # name: Absolute price oscillator
+    # interpretation: bearish market or bullish market
+    # crossing above 0 - bullish ; crossing below 0 - berish
+    # APO = Shorter Period EMA – Longer Period EMA
+    # problems: talib and pt-lib calculations are not pass with pattern
+    # require: EMA's
+    df["apo_10_20"] = df["ema_10"] - df["ema_20"]  # standard
+    df["apo_talib_10_20"] = ta.APO(df["close"], fastperiod=10, slowperiod=20, matype=0)  # standart tradingview
+    df["apo_talib_12_26"] = ta.APO(df["close"], fastperiod=12, slowperiod=26, matype=0)
+
+
+
+def get_indicators_momentum_apo_cross():
+    # verification: apo_cross_10_20 ok, other based on ta-lib not, but check them
+    # token
+    # 1 - crossing to bullish ; 0 - crossing to bearish
+    df["apo_cross_10_20"] = np.where((df["apo_10_20"] > 0) & (df["apo_10_20"].shift(1) < 0), 1,
+                                     np.where((df["apo_10_20"] < 0) & (df["apo_10_20"].shift(1) > 0), -1, 0))
+    df["apo_cross_talib_10_20"] = np.where((df["apo_talib_10_20"] > 0) & (df["apo_talib_10_20"].shift(1) < 0), 1,
+                                     np.where((df["apo_talib_10_20"] < 0) & (df["apo_talib_10_20"].shift(1) > 0),
+                                              -1, 0))
+    df["apo_cross_talib_12_26"] = np.where((df["apo_talib_12_26"] > 0) & (df["apo_talib_12_26"].shift(1) < 0), 1,
+                                     np.where((df["apo_talib_12_26"] < 0) & (df["apo_talib_12_26"].shift(1) > 0),
+                                              -1, 0))
+
+def get_indicators_momentum_aroon(period_list):
+    # https://tradersarea.pl/aroon-indicator-wskaznik-analizy-technicznej/
+    #AROON
+    # verification:
+    # tradingView: ok
+
+    for i in period_list:
+        df["aroondown_"+str(i)], df["aroonup_"+str(i)] = ta.AROON(df["high"], df["low"], timeperiod=i)
+
+        #AROONOSC
+        df["aroonosc_"+str(i)] = ta.AROONOSC(df["high"], df["low"], timeperiod=i)
 
 def get_indicators_momentum_bop():
     # BOP - Balance Of Power
@@ -326,16 +377,21 @@ def get_indicators_momentum_bop():
         df["bop_sma_zero_cross_" + str(i)] = np.where((df["bop_sma_" + str(i)] > 0) & (df["bop_sma_" + str(i)].shift(1) < 0), 1, 0) +\
                                np.where((df["bop_sma_" + str(i)] < 0) & (df["bop_sma_" + str(i)].shift(1) > 0), -1, 0)
 
-def get_indicators_momentum_mfi(period_list):
-    # MFI - Money Flow Index
-    # TradingView checked - OK
-    for i in period_list:
-        df["mfi_"+str(i)] = pta.mfi(df["high"], df["low"], df["close"], df["volume"], length=i)
 
 def get_indicators_momentum_cci(period_list):
     # CCI -- tradingView.. Oversold: -80 - -300/-500 - infinity scale
     for i in period_list:
-        df["cci_"+str(i)] = pta.cci(df["high"], df["low"], df["close"], i)
+        df["cci_"+str(i)] = ta.CCI(df["high"], df["low"], df["close"], i)
+
+def get_indicators_momentum_cmo(period_list):
+    #CMO - Chande Momentum Oscillator
+    for i in period_list:
+        df["cmo_"+str(i)] = pta.cmo(df["close"], timeperiod=i)
+
+def get_indicators_momentum_dx(period_list):
+    # DX - Directional Movement Index
+    for i in period_list:
+        df["dx_"+str(i)] = ta.DX(df["high"], df["low"], df["close"], timeperiod=i)
 
 def get_indicators_momentum_force_idx():
     # https://school.stockcharts.com/doku.php?id=technical_indicators:force_index
@@ -347,6 +403,141 @@ def get_indicators_momentum_force_idx():
                                           np.where((df["force_index_sma_13"] < 0) &
                                           (df["force_index_sma_13"].shift(1) > 0), -1, 0)
 
+
+def get_indicators_momentum_macd():
+
+    # MACD
+    # https://pl.wikipedia.org/wiki/MACD
+    # Wskaźnik bada zbieżności i rozbieżności średnich ruchomych.
+    # Jest różnicą wartości długoterminowej i krótkoterminowej średniej wykładniczej.
+    # linia MACD przecina linię sygnału od dołu – jest to sygnał do zakupu i zapowiedź trendu wzrostowego.
+    # linia MACD przecina linię sygnału od góry – jest to sygnał do sprzedaży i zapowiedź odwrócenia trendu.
+    # 1- buy signal -1  sell signal
+    # todo: -1 and 1 instant as area (not only point when cross)
+    # todo: sygnał, gdy linie zmierzaja do przeciecia z wyprzedzeniem, np dynamika wskazuje ze sie przetna
+    df["macd"], df["macdsignal"], df["macdhist"] = ta.MACD(df["close"], fastperiod=12, slowperiod=26, signalperiod=9)
+    df["upcross_downcross_macd_signal"] = np.where((df["macd"] - df["macdsignal"] > 0) & (df["macd"].shift(1) - df["macdsignal"].shift(1) < 0), 1, 0) +\
+                             np.where((df["macd"] - df["macdsignal"] < 0) & (df["macd"].shift(1) - df["macdsignal"].shift(1) > 0), -1, 0)
+
+# todo: MACDEXT - MACD with controllable MA type
+# todo: MACDFIX - Moving Average Convergence/Divergence Fix 12/26
+
+def get_indicators_momentum_mfi(period_list):
+    # MFI - Money Flow Index
+    for i in period_list:
+        df["mfi_"+str(i)] = ta.MFI(df["high"], df["low"], df["close"], df["volume"], timeperiod=i)
+
+def get_indicators_momentum_minus_di(period_list):
+    # MINUS_DI - Minus Directional Indicator
+    for i in period_list:
+        df["minus_di_"+str(i)] = ta.MINUS_DI(df["high"], df["low"], df["close"], timeperiod=i)
+
+def get_indicators_momentum_minus_dm(period_list):
+    # MINUS_DM - Minus Directional Movement
+    for i in period_list:
+        df["minus_dm_"+str(i)] = ta.MINUS_DM(df["high"], df["low"], timeperiod=i)
+
+def get_indicators_momentum_mom(period_list):
+    # MOM - Momentum
+    for i in period_list:
+        df["mom_"+str(i)] = ta.MOM(df["close"], timeperiod=i)
+
+def get_indicators_momentum_plus_di(period_list):
+    # MINUS_DI - Minus Directional Indicator (negative)
+    for i in period_list:
+        df["plus_di_"+str(i)] = ta.PLUS_DI(df["high"], df["low"], df["close"], timeperiod=i)
+
+def get_indicators_momentum_plus_dm(period_list):
+    # MINUS_DM - Minus Directional Movement (positive)
+    for i in period_list:
+        df["plus_dm_"+str(i)] = ta.PLUS_DM(df["high"], df["low"], timeperiod=i)
+
+def get_indicators_momentum_ppo():
+    # PPO - Percentage Price Oscillator
+    df["ppo_12_26"] = ta.PPO(df["close"], fastperiod=12, slowperiod=26, matype=0)  # standart
+    df["ppo_10_21"] = ta.PPO(df["close"], fastperiod=10, slowperiod=21, matype=0)  # tradingview corr
+
+def get_indicators_momentum_roc(period_list):
+    # ROC - Rate of change : ((price/prevPrice)-1)*100
+    # info: low values means buy, high values means sell
+    # result integer f.e. -11
+    # ta and pta
+    # todo: produce new indicators ROC_2P,ROC_3P,ROC_4P,... (f.e. ((price/price-2/3/4 periods)-1)*100
+    for i in period_list:
+        df["roc_"+str(i)] = pta.roc(df["close"], timeperiod=i)
+
+def get_indicators_momentum_rocp(period_list):
+    # ROCP - Rate of change Percentage: (price-prevPrice)/prevPrice
+    for i in period_list:
+        df["rocp_"+str(i)] = ta.ROCP(df["close"], timeperiod=i)
+
+def get_indicators_momentum_rocr(period_list):
+    # ROCR - Rate of change ratio: (price/prevPrice)
+    for i in period_list:
+        df["rocr_"+str(i)] = ta.ROCR(df["close"], timeperiod=i)
+
+def get_indicators_momentum_rocr100(period_list):
+    # ROCR100 - Rate of change ratio 100 scale: (price/prevPrice)*100
+    for i in period_list:
+        df["rocr100_"+str(i)] = ta.ROCR100(df["close"], timeperiod=i)
+
+def get_indicators_momentum_rsi(period_list):
+    # RSI - Relative Strength Index
+    # 100 - (100 / (1 + (avg gain / avg loss)))
+    # can't insert 1 as argument - gen err
+    # info: low values (0-20) - buy, high values (80-100) - sell
+    # args: periods
+    # result: 0-100 integer
+    # works also with ta and pta (lcase or ucase (rsi/RSI)- depends od library you use)
+    for i in period_list:
+        df["rsi_"+str(i)] = pta.rsi(df["close"], timeperiod=i)
+
+def get_indicators_momentum_stoch():
+    # STOCH - Stochastic
+    # overbought and oversold signals.
+    # above 80 indicating that an asset is overbought
+    # below 20 indicating that it is oversold
+    # info: https://www.investopedia.com/terms/s/stochasticoscillator.asp
+    df["slowk"], df["slowd"] = ta.STOCH(df["high"], df["low"], df["close"], fastk_period=5, slowk_period=3, slowk_matype=0, slowd_period=3, slowd_matype=0)
+
+def get_indicators_momentum_stochf():
+    # STOCHF - Stochastic Fast
+    df["fastk"], df["fastd"] = ta.STOCHF(df["high"], df["low"], df["close"], fastk_period=5, fastd_period=3, fastd_matype=0)
+
+def get_indicators_momentum_stochrsi(period_list):
+    # STOCHRSI - Stochastic Relative Strength Index
+    for i in period_list:
+        df["stochrsi_fast_k_"+str(i)], df["stochrsi_fast_d_"+str(i)] = ta.STOCHRSI(df["close"], timeperiod=i, fastk_period=5, fastd_period=3, fastd_matype=0)
+
+def get_indicators_momentum_trix(period_list):
+    # TRIX - 1-day Rate-Of-Change (ROC) of a Triple Smooth EMA
+    # 30 standard time period
+    for i in period_list:
+        df["trix_"+str(i)] = ta.TRIX(df["close"], timeperiod=i)
+
+def get_indicators_momentum_ultosc():
+    # ULTOSC - Ultimate Oscillator
+    df["ultosc_7_14_28"] = ta.ULTOSC(df["high"], df["low"], df["close"], timeperiod1=7, timeperiod2=14, timeperiod3=28)
+
+def get_indicators_momentum_willr(period_list):
+    for i in period_list:
+        df["willr_"+str(i)] = ta.WILLR(df["high"], df["low"], df["close"], timeperiod=i)
+
+
+# todo: indicators outside TA-LIB (fe. CHOP, other from trafing course FXMAG (aligators etc.)
+
+# VOLUME INDICATORS
+# VOLUME INDICATORS
+# VOLUME INDICATORS
+
+def get_indicators_volume_chaikin_ad():
+    df["chaikin_ad"] = ta.AD(df["high"], df["low"], df["close"], df["volume"])
+
+def get_indicators_volume_chaikin_ad_oscillator():
+    df["chaikin_ad_oscillator_3_10"] = ta.ADOSC(df["high"], df["low"], df["close"], df["volume"], fastperiod=3, slowperiod=10)
+
+def get_indicators_volume_obv():
+    df["chaikin_obv"] = ta.OBV(df["close"], df["volume"])
 
 
 # PRINT RESULTS
@@ -456,82 +647,135 @@ def get_test_result(test_stake_in, test_indicator_buy_1_in, test_indicator_buy_v
 
 
 if __name__ == "__main__":
-    # get configuration
-    db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name, db_tactics_groups_table_name \
-        , db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, db_tactics_config_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE, worker_tactics_generator_work_hours, worker_tactics_generator_sleep = get_settings_json()
+    run_mode = 2  # 1 - run on database,  2 - result to excel for tests, else: dry run
 
-    # create or clear temp dir
-    create_temp_dir(TMP_DIR_PATH)
+    if run_mode == 1:
+        # get configuration
+        db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name, db_tactics_groups_table_name \
+            , db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, db_tactics_config_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE, worker_tactics_generator_work_hours, worker_tactics_generator_sleep = get_settings_json()
 
-    # connect to db
-    cursor, cnxn = db_connect()
+        # create or clear temp dir
+        create_temp_dir(TMP_DIR_PATH)
 
+        # connect to db
+        cursor, cnxn = db_connect()
 
+        # register worker
+        worker_hostname, worker_id = register_worker()
 
-    # register worker
-    worker_hostname, worker_id = register_worker()
+        # downloads tactics to check
+        tactics_data = get_tactics_to_check()
 
-    # downloads tactics to check
-    tactics_data = get_tactics_to_check()
+        # get only data for one settings_id. Don't blend settings _id in one iteration
+        download_settings_id = tactics_data[0][1]
 
-    # get only data for one settings_id. Don't blend settings _id in one iteration
-    download_settings_id = tactics_data[0][1]
+        # print(tactics_data)
+        print("select done settings done")
 
-    # print(tactics_data)
-    print("select done settings done")
-
-    # get OHLC data and create data frames
-    df, df_bak = get_ohlc_data()
-    # print(df)
-
-    # create structure on tactics data
-    get_structured_data()
-    # print(df)
-
-    # INDICATORS
-    get_indicators_basics()
-
-    # activate analytic functions from tactics set
-    eval(tactics_data[0][6])
-    print(tactics_data[0][6])
-
-    # export results to xlsx. Work fine, when all analytical functions needed are activated.
-    # export_results_to_xls()
-
-    # print current df
-    # print_results()
-
-    # REAL TEST RUN
-    print("begin test")
-    print(len(tactics_data))
-
-    df_bak = df.copy()
-
-    for i in range(len(tactics_data)):  # in tactics_data:
-        print(i)
-        result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4 = get_test_result(
-            int(tactics_data[i][2]), tactics_data[i][3], tactics_data[i][4], tactics_data[i][5], tactics_data[i][7],
-            tactics_data[i][8], tactics_data[i][9])
-
-        cursor.execute(
-            "UPDATE " + db_tactics_schema_name + "." + db_tactics_table_name +" SET tactic_status_id = 2 where tactic_id = " + str(
-                tactics_data[i][0]) + " ")
-        print("update status done")
-        cnxn.commit()
-
-        # insert results if results are good enough
-        # todo: read upper scripts and rewrite script listed below from 0
-        print("score2:")
-        print(score_2)
-
-        if score_2 >= -1000000:  # 400 and score_1 >= 100 and score_4 == 1:  # and score_3 >= 0.75:
-            cursor.execute(
-                "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_results_table_name +" (download_settings_id, tactic_id, result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4, worker_id)  values "
-                                                  "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (
-                    download_settings_id, str(tactics_data[i][0]), result_string_1, result_string_2, result_string_3,
-                    str(int(score_1)), str(int(score_2)), str(score_3), str(score_4), worker_id))
-
-        print("insert done or not")
-        df = df_bak.copy()  # absolutly needed. Simple assignment doesn't work in pandas
+        # get OHLC data and create data frames
+        df, df_bak = get_ohlc_data()
         # print(df)
-        cnxn.commit()
+
+        # create structure on tactics data
+        get_structured_data()
+        # print(df)
+
+        # INDICATORS
+        get_indicators_basics()
+
+        # activate analytic functions from tactics set
+        eval(tactics_data[0][6])
+        print(tactics_data[0][6])
+
+        # export results to xlsx. Work fine, when all analytical functions needed are activated.
+        # export_results_to_xls()
+
+        # print current df
+        # print_results()
+
+        # REAL TEST RUN
+        print("begin test")
+        print(len(tactics_data))
+
+        df_bak = df.copy()
+
+        for i in range(len(tactics_data)):  # in tactics_data:
+            print(i)
+            result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4 = get_test_result(
+                int(tactics_data[i][2]), tactics_data[i][3], tactics_data[i][4], tactics_data[i][5], tactics_data[i][7],
+                tactics_data[i][8], tactics_data[i][9])
+
+            cursor.execute(
+                "UPDATE " + db_tactics_schema_name + "." + db_tactics_table_name +" SET tactic_status_id = 2 where tactic_id = " + str(
+                    tactics_data[i][0]) + " ")
+            print("update status done")
+            cnxn.commit()
+
+            # insert results if results are good enough
+            # todo: read upper scripts and rewrite script listed below from 0
+            print("score2:")
+            print(score_2)
+
+            if score_2 >= 600 and score_1 >= 150 and score_4 == 1 and score_3 >= 0.75: # -1000000:
+                cursor.execute(
+                    "INSERT INTO " + db_tactics_schema_name + "." + db_tactics_results_table_name +" (download_settings_id, tactic_id, result_string_1, result_string_2, result_string_3, score_1, score_2, score_3, score_4, worker_id)  values "
+                                                      "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (
+                        download_settings_id, str(tactics_data[i][0]), result_string_1, result_string_2, result_string_3,
+                        str(int(score_1)), str(int(score_2)), str(score_3), str(score_4), worker_id))
+
+
+            print("insert done or not")
+            df = df_bak.copy()  # absolutly needed. Simple assignment doesn't work in pandas
+            # print(df)
+            cnxn.commit()
+
+
+    elif run_mode == 2:
+        # get configuration
+        db_klines_schema_name, db_tactics_schema_name, db_klines_anl_table_name, db_binance_settings_table_name, db_tactics_table_name, db_tactics_groups_table_name \
+            , db_tactics_analyse_table_name, db_tactics_results_table_name, db_tactics_workers_table_name, db_tactics_config_table_name, TMP_DIR_PATH, TACTICS_PACK_SIZE, worker_tactics_generator_work_hours, worker_tactics_generator_sleep = get_settings_json()
+
+        # create or clear temp dir
+        create_temp_dir(TMP_DIR_PATH)
+
+        # connect to db
+        cursor, cnxn = db_connect()
+
+
+        # get only data for one settings_id. Don't blend settings _id in one iteration
+        download_settings_id = 11
+
+        # print(tactics_data)
+        print("select done settings done")
+
+        # get OHLC data and create data frames
+        df, df_bak = get_ohlc_data()
+        # print(df)
+
+        # create structure on tactics data
+        get_structured_data()
+        # print(df)
+
+        # INDICATORS
+        get_indicators_basics()
+
+        # activate analytic functions from tactics set
+        # get_indicators_momentum_roc([5, 8, 10, 15])
+        # get_indicators_momentum_rsi([5, 8, 10, 15])
+        # get_indicators_momentum_roc_pta([5, 8, 10, 15])
+        # get_indicators_momentum_bop()
+
+        get_indicators_momentum_cci([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
+        get_indicators_momentum_force_idx()
+        get_indicators_momentum_rsi([5, 8, 10, 15])
+        get_indicators_momentum_mfi([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
+        # sf.get_indicators_momentum_roc([6, 7, 9, 10, 12, 14, 16, 20, 21, 24, 25, 30, 50, 100, 200])
+        # sf.get_indicators_volume_chaikin_ad()
+        # get_indicators_momentum_stoch()
+        # get_indicators_momentum_macd()
+        get_indicators_momentum_roc([1, 5, 8, 10, 15])
+        get_indicators_momentum_adx([5, 8, 10, 15])
+        # export results to xlsx. Work fine, when all analytical functions needed are activated.
+        export_results_to_xls()
+    else:
+        print("no run mode selected")
